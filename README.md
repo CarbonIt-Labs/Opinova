@@ -1,74 +1,132 @@
-# Opinova
+# Opinova 🚀
 ## AI-Powered Decision Intelligence Platform
 
-> Turning collective opinions into intelligent decisions.
+**Turning collective opinions into intelligent decisions.**
 
-Opinova is an AI-powered feedback intelligence platform that helps institutions transform thousands of opinions, complaints, and suggestions into prioritized actions.
-
-Instead of simply counting feedback, Opinova understands the **importance, urgency, criticality, and impact** behind every voice — helping decision-makers focus on what truly matters.
-
----
-
-# 🌟 Why Opinova?
-
-Organizations collect huge amounts of feedback, but the biggest challenge is:
-
-**"What should we act on first?"**
-
-Opinova solves this by using AI to:
-
-- Understand feedback context
-- Group similar issues
-- Calculate priority scores
-- Identify critical problems
-- Generate actionable recommendations
+Developed by **CarbonIt Labs**  
+Created by **Edwin Sam K Reju**
 
 ---
 
-# ⚡ Features
+Opinova is an AI-powered decision intelligence platform that transforms thousands of opinions, complaints, and suggestions into clear priorities and actionable insights.
 
-## 🧠 AI Feedback Analysis
+Organizations receive large amounts of feedback every day, but the real challenge is:
 
-Automatically analyzes large feedback datasets and discovers hidden patterns.
+> "What matters most, and what should be done first?"
 
-## 🎯 Intelligent Priority Scoring
+Opinova helps institutions understand collective voices, identify critical concerns, and convert feedback into meaningful actions.
 
-Issues are ranked using multiple factors:
+---
+
+# 🌟 Vision
+
+Opinova aims to build a smarter bridge between human voices and institutional decisions.
+
+Every opinion contains a signal.
+
+Opinova helps discover:
+
+- What people are saying
+- Why it matters
+- What actions should be considered
+
+---
+
+# ⚡ Key Capabilities
+
+## 🧠 Intelligent Feedback Understanding
+
+Analyzes feedback beyond simple counting by identifying patterns, concerns, and important themes.
+
+## 🎯 Priority-Based Decision Support
+
+Evaluates issues using factors such as:
 
 - Criticality
 - Urgency
 - Impact
-- Frequency
-- Users affected
+- People affected
+- Overall importance
 
-## 🔍 Explainable AI
+Helping organizations focus on the issues that matter most.
 
-Every decision includes:
+## 🔍 Explainable Insights
 
-- Why this issue matters
-- AI confidence
-- Recommended action
+Opinova provides understandable reasoning behind its analysis:
 
-No black-box decisions.
+- Why an issue is important
+- Why it received priority
+- Possible recommended actions
 
-## 📊 Decision Dashboard
+## 📊 Decision Intelligence Dashboard
 
-Visualizes:
+Provides a clear view of:
 
-- Top issues
-- Priority ranking
-- Categories
+- Important issues
+- Emerging concerns
+- Feedback patterns
 - Action recommendations
-- Institutional insights
-
-## 🚀 Batch AI Processing
-
-Optimized architecture that analyzes feedback in batches to:
-
-- Reduce API usage
-- Lower cost
-- Improve scalability
 
 ---
 
-# 🏗️ Architecture
+# 🏫 Use Cases
+
+## Educational Institutions
+
+- Student feedback analysis
+- Campus improvement
+- Identifying critical concerns
+
+## Organizations
+
+- Employee feedback intelligence
+- Customer opinion analysis
+- Better internal decisions
+
+## Communities
+
+- Understanding public opinions
+- Supporting data-driven decisions
+
+---
+
+# 🔮 Future Roadmap
+
+- Real-time feedback intelligence
+- Enterprise deployments
+- Advanced analytics
+- Custom institutional solutions
+- Scalable decision-support systems
+
+---
+
+# 👨‍💻 Creator
+
+**Edwin Sam K Reju**
+
+Founder / Developer at **CarbonIt Labs**
+
+---
+
+# 📜 License
+
+This project is licensed under the **Apache License 2.0**.
+
+The Apache License 2.0 allows:
+
+- Commercial use
+- Modification
+- Distribution
+- Private use
+
+while providing attribution requirements and contributor protections.
+
+See the `LICENSE` file for complete license terms.
+
+---
+
+© 2026 CarbonIt Labs  
+Created by Edwin Sam K Reju
+
+**Millions of opinions.  
+One intelligent direction.**
