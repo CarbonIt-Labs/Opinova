@@ -1,4 +1,4 @@
-# Opinova 🚀
+# Opinova
 ## AI-Powered Decision Intelligence Platform
 
 **Turning collective opinions into intelligent decisions.**
