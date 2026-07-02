@@ -25,11 +25,14 @@ def run_analysis(filepath: str):
         print(f"File {filepath} not found. Ensure it exists in the correct folder.")
         return
         
-    text_col = None
-    for col in df.columns:
-        if df[col].dtype == 'object':
-            text_col = col
-            break
+    if len(df.columns) == 1:
+        text_col = df.columns[0]
+    else:
+        text_col = None
+        for col in df.columns:
+            if df[col].dtype == 'object' or df[col].dtype == 'string':
+                text_col = col
+                break
             
     if not text_col:
         print("Could not find a text column in the dataset.")

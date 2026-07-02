@@ -23,7 +23,7 @@ def calculate_priority_score(cluster: Dict) -> Dict:
     
     # Let's recalculate accurately:
     # Max possible: 30 + 30 + 20 + 10 + 10 = 100
-    final_score = min(round(score), 100)
+    final_score = int(min(round(score), 100))
     
     cluster['priority_score'] = final_score
     cluster['category'] = categorize_issue(cluster)
