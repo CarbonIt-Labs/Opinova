@@ -2,6 +2,7 @@ import argparse
 import sys
 import json
 import os
+import time
 from data_loader import load_file
 from ai_engine import analyze_feedback
 from clustering import cluster_feedback
@@ -44,13 +45,30 @@ def run_analysis(filepath: str):
     for index, row in df.iterrows():
         text = str(row[text_col])
         print(f"Analyzing {index+1}/{len(df)}...")
-        try:
-            analysis = analyze_feedback(text)
-            record = analysis.model_dump()
-            record['original_text'] = text
-            processed_data.append(record)
-        except Exception as e:
-            print(f"Error processing record {index+1}: {e}")
+        
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                analysis = analyze_feedback(text)
+                record = analysis.model_dump()
+                record['original_text'] = text
+                processed_data.append(record)
+                break
+            except Exception as e:
+                error_msg = str(e)
+                if "429" in error_msg or "Too Many Requests" in error_msg or "quota" in error_msg.lower():
+                    if attempt < max_retries - 1:
+                        sleep_time = (attempt + 1) * 5
+                        print(f"Rate limit hit. Waiting {sleep_time} seconds before retrying...")
+                        time.sleep(sleep_time)
+                    else:
+                        print(f"Error processing record {index+1} after retries: {e}")
+                else:
+                    print(f"Error processing record {index+1}: {e}")
+                    break
+                    
+        # Sleep to keep under the standard 15 requests/minute free tier limit
+        time.sleep(4.5)
             
     if not processed_data:
         print("No records processed successfully.")
