@@ -4,17 +4,18 @@ import json
 import os
 import time
 from data_loader import load_file
-from ai_engine import analyze_feedback
-from clustering import cluster_feedback
+from ai_engine import analyze_feedback_batch
+from clustering import merge_batch_clusters
 from scoring import score_clusters
 from reports import print_top_issues, print_summary, export_report
 from fastapi import FastAPI
 import uvicorn
 from dotenv import load_dotenv
+from config import BATCH_SIZE
 
 load_dotenv()
 
-app = FastAPI(title="ConsensusAI API")
+app = FastAPI(title="Opinova API API")
 
 PROCESSED_FILE = "data/processed_results.json"
 
@@ -39,46 +40,59 @@ def run_analysis(filepath: str):
         print("Could not find a text column in the dataset.")
         return
         
-    print(f"Found text column: '{text_col}'. Analyzing {len(df)} records...")
+    print(f"Found text column: '{text_col}'. Processing {len(df)} records in batches of {BATCH_SIZE}...")
     
-    processed_data = []
-    for index, row in df.iterrows():
-        text = str(row[text_col])
-        print(f"Analyzing {index+1}/{len(df)}...")
+    # Extract all text into a list
+    all_feedback = [str(text) for text in df[text_col].tolist()]
+    
+    all_ai_clusters = []
+    
+    # Chunking
+    for i in range(0, len(all_feedback), BATCH_SIZE):
+        batch = all_feedback[i:i+BATCH_SIZE]
+        print(f"Analyzing batch {i//BATCH_SIZE + 1}/{(len(all_feedback)-1)//BATCH_SIZE + 1}...")
         
-        max_retries = 3
+        backoff_times = [5, 15, 30, 60]
+        max_retries = len(backoff_times)
+        
         for attempt in range(max_retries):
             try:
-                analysis = analyze_feedback(text)
-                record = analysis.model_dump()
-                record['original_text'] = text
-                processed_data.append(record)
+                # LLM Call
+                result = analyze_feedback_batch(batch)
+                
+                # Convert pydantic models to dict, adjust indices to absolute global indices
+                for cluster in result.clusters:
+                    cluster_dict = cluster.model_dump()
+                    # Convert batch-relative indices to global indices
+                    cluster_dict['feedback_indices'] = [idx + i for idx in cluster_dict['feedback_indices']]
+                    all_ai_clusters.append(cluster_dict)
                 break
+                
             except Exception as e:
                 error_msg = str(e)
-                if "429" in error_msg or "Too Many Requests" in error_msg or "quota" in error_msg.lower():
+                if "429" in error_msg or "Too Many Requests" in error_msg or "quota" in error_msg.lower() or "503" in error_msg or "Unavailable" in error_msg:
                     if attempt < max_retries - 1:
-                        sleep_time = (attempt + 1) * 5
-                        print(f"Rate limit hit. Waiting {sleep_time} seconds before retrying...")
+                        sleep_time = backoff_times[attempt]
+                        print(f"API busy or quota hit. Waiting {sleep_time} seconds before retrying...")
                         time.sleep(sleep_time)
                     else:
-                        print(f"Error processing record {index+1} after retries: {e}")
+                        print(f"Failed to process batch {i//BATCH_SIZE + 1} after retries: {e}")
                 else:
-                    print(f"Error processing record {index+1}: {e}")
+                    print(f"Error processing batch {i//BATCH_SIZE + 1}: {e}")
                     break
                     
-        # Sleep to keep under the standard 15 requests/minute free tier limit
-        time.sleep(4.5)
+        # Small delay between successful batches
+        time.sleep(2)
             
-    if not processed_data:
-        print("No records processed successfully.")
+    if not all_ai_clusters:
+        print("No batches processed successfully.")
         return
         
-    print("Clustering feedback...")
-    clusters = cluster_feedback(processed_data)
+    print("Merging clusters across batches...")
+    merged_clusters = merge_batch_clusters(all_ai_clusters, all_feedback)
     
-    print("Scoring clusters...")
-    scored_clusters = score_clusters(clusters)
+    print("Applying priority scoring logic...")
+    scored_clusters = score_clusters(merged_clusters)
     
     os.makedirs("data", exist_ok=True)
     with open(PROCESSED_FILE, 'w') as f:
@@ -111,7 +125,7 @@ def api_summary():
     return {"total_clusters": len(clusters)}
 
 def main():
-    parser = argparse.ArgumentParser(description="ConsensusAI - Decision Intelligence Platform")
+    parser = argparse.ArgumentParser(description="Opinova - Decision Intelligence Platform")
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
     
     parser_analyze = subparsers.add_parser("analyze", help="Analyze a feedback file (CSV/JSON)")
