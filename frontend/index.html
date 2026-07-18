@@ -6,6 +6,7 @@
 <title>Opinova — Dashboard</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="icon" type="image/png" href="../backend/opinova_transparent_favcon.png">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
@@ -461,13 +462,11 @@
       <option value="academic">Academic</option>
       <option value="services">Services</option>
     </select>
-    <label for="filterSentiment">Sentiment</label>
-    <select id="filterSentiment">
-      <option value="" disabled selected>Select Sentiment...</option>
-      <option value="all">All Sentiments</option>
-      <option value="positive">Positive</option>
-      <option value="neutral">Neutral</option>
-      <option value="negative">Negative</option>
+    <label for="filterStatus">Status</label>
+    <select id="filterStatus">
+      <option value="all">All Suggestions</option>
+      <option value="pending" selected>Pending</option>
+      <option value="solved">Solved</option>
     </select>
     <div class="modal-actions">
       <button class="btn btn-outline" onclick="closeFilterModal()">Cancel</button>
@@ -555,14 +554,12 @@
       <button id="btnAnalyze" class="btn btn-accent" onclick="analyzeCurrentFile()" disabled aria-label="Analyze selected file" style="opacity:0.5;">
         <i class="fa-solid fa-brain"></i> Analyze
       </button>
+      <button id="btnDeleteFile" class="btn btn-outline" onclick="deleteCurrentFile()" disabled aria-label="Delete selected file" style="opacity:0.5;">
+        <i class="fa-solid fa-trash"></i> Delete
+      </button>
       <button class="btn btn-outline" onclick="uploadCSV()" aria-label="Upload CSV Dataset">
         <i class="fa-solid fa-upload"></i> Upload CSV
       </button>
-      <select id="globalStatusFilter" class="btn btn-outline" onchange="refreshDashboard()" style="background:var(--bg-primary);color:var(--fg);border:1px solid var(--border);" aria-label="Filter by status">
-        <option value="">All</option>
-        <option value="pending" selected>Pending</option>
-        <option value="solved">Solved</option>
-      </select>
       <button class="btn btn-outline" onclick="openFilterModal()" aria-label="Open filter settings">
         <i class="fa-solid fa-filter"></i> Filter
       </button>
@@ -728,10 +725,16 @@
       <div class="card-header">
         <h3><i class="fa-solid fa-gear" style="color:var(--fg-muted);margin-right:8px;"></i>Platform Settings</h3>
       </div>
-      <div class="card-body" style="display:flex; flex-direction:column; gap:20px; max-width:500px;">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <div><strong style="font-size:14px;">Email Notifications</strong><div style="font-size:12px; color:var(--fg-muted);">Receive alerts for critical issues</div></div>
-          <button class="btn btn-outline" onclick="showToast('Settings saved', 'success')">Toggle</button>
+      <div class="card-body" style="display:flex; flex-direction:column; gap:20px; max-width:560px;">
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div><strong style="font-size:14px;">AI API Key</strong><div style="font-size:12px; color:var(--fg-muted);">Saved to the app .env file for analysis</div></div>
+          <input id="settingsApiKey" type="password" placeholder="Enter Gemini API key" style="width:100%; padding:10px 12px; background:var(--bg-primary); border:1px solid var(--border); border-radius:8px; color:var(--fg); font-size:13px;">
+        </div>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div><strong style="font-size:14px;">Default Login</strong><div style="font-size:12px; color:var(--fg-muted);">Change the user ID and password used on sign in</div></div>
+          <input id="settingsUsername" type="text" placeholder="User ID" style="width:100%; padding:10px 12px; background:var(--bg-primary); border:1px solid var(--border); border-radius:8px; color:var(--fg); font-size:13px;">
+          <input id="settingsPassword" type="password" placeholder="New password (leave blank to keep current)" style="width:100%; padding:10px 12px; background:var(--bg-primary); border:1px solid var(--border); border-radius:8px; color:var(--fg); font-size:13px;">
+          <button class="btn btn-accent" style="width:max-content;" onclick="saveSettings()"><i class="fa-solid fa-floppy-disk"></i> Save Settings</button>
         </div>
         <div style="display:flex; justify-content:space-between; align-items:center;">
           <div><strong style="font-size:14px;">Auto-Sync Database</strong><div style="font-size:12px; color:var(--fg-muted);">Run pipeline hourly</div></div>
@@ -749,7 +752,10 @@
     <div class="card" style="min-height:70vh;">
       <div class="card-header">
         <h3><i class="fa-solid fa-clock-rotate-left" style="color:var(--warning);margin-right:8px;"></i>Activity Logs</h3>
-        <button class="btn btn-outline" style="font-size:11px; padding:4px 8px; margin-left:auto;" onclick="loadActivities()">Refresh</button>
+        <div style="display:flex; gap:8px; margin-left:auto;">
+          <button class="btn btn-outline" style="font-size:11px; padding:4px 8px;" onclick="loadActivities()">Refresh</button>
+          <button class="btn btn-outline" style="font-size:11px; padding:4px 8px;" onclick="clearActivities()">Clear Logs</button>
+        </div>
       </div>
       <div class="card-body">
         <div id="activityLogsList" style="display:flex; flex-direction:column; gap:12px;">
@@ -774,13 +780,12 @@
 <script>
 
 // ── State ────────────────────────────────────────────────────────────────────
-let currentFilter = { category: 'all', sentiment: 'all' };
+let currentFilter = { category: 'all', status: 'pending' };
 let currentFileId = null;   // tracks the currently selected file
 let currentFiles = [];      // cached list of uploaded files
 
 function getFilterParams() {
-  const statusEl = document.getElementById('globalStatusFilter');
-  const status = statusEl ? statusEl.value : '';
+  const status = currentFilter.status === 'all' ? '' : currentFilter.status;
   return { ...currentFilter, status: status, file_id: currentFileId };
 }
 
@@ -820,6 +825,11 @@ function onFileChange() {
 
 function updateAnalyzeBtn() {
   const btn = document.getElementById('btnAnalyze');
+  const deleteBtn = document.getElementById('btnDeleteFile');
+  if (deleteBtn) {
+    deleteBtn.disabled = !currentFileId;
+    deleteBtn.style.opacity = currentFileId ? '1' : '0.5';
+  }
   if (!currentFileId) {
     btn.disabled = true;
     btn.style.opacity = '0.5';
@@ -838,6 +848,21 @@ function updateAnalyzeBtn() {
   } else {
     btn.disabled = true;
     btn.style.opacity = '0.5';
+  }
+}
+
+async function deleteCurrentFile() {
+  if (!currentFileId) { showToast('Please select a file first.', 'info'); return; }
+  const file = currentFiles.find(f => f.id === currentFileId);
+  if (!confirm(`Delete ${file ? file.filename : 'this file'} and its analysis?`)) return;
+  const result = await window.pywebview.api.delete_file(currentFileId);
+  if (result && result.status === 'success') {
+    showToast(`Deleted ${file ? file.filename : 'selected file'}.`, 'success');
+    currentFileId = null;
+    await populateFileDropdown();
+    await loadDashboard();
+  } else {
+    showToast(result.message || 'Delete failed.', 'error');
   }
 }
 
@@ -903,30 +928,39 @@ function createOverlay(msg) {
 
 // ── Toggle issue status ───────────────────────────────────────────────────────
 async function toggleIssueStatus(id, currentStatus, event) {
-  event.stopPropagation();
+  if (event) event.stopPropagation();
+  if (!id || id === 'undefined') {
+    showToast('This item has no saved ID yet. Re-run analysis to refresh it.', 'error');
+    return;
+  }
   const newStatus = currentStatus === 'pending' ? 'solved' : 'pending';
-  await window.pywebview.api.mark_issue_status(id, newStatus);
-  showToast('Issue marked as ' + newStatus, 'success');
-  refreshDashboard();
+  const success = await window.pywebview.api.mark_issue_status(id, newStatus);
+  if (success) {
+    showToast('Item marked as ' + newStatus, 'success');
+    await refreshDashboard();
+  } else {
+    showToast('Could not update item status.', 'error');
+  }
 }
 
 // ── Suggestions page ─────────────────────────────────────────────────────────
 function renderSuggestionsPage(suggs) {
+  window.currentSuggestionsData = suggs || [];
   const list = document.getElementById('suggestionsList');
   if (!list) return;
   if (!suggs || suggs.length === 0) {
     list.innerHTML = '<div style="color:var(--fg-muted);">No suggestions found for current selection.</div>';
     return;
   }
-  list.innerHTML = suggs.map(d => `
-    <div style="background:var(--bg-primary); padding:16px; border-radius:12px; border:1px solid var(--border); margin-bottom:12px;">
+  list.innerHTML = suggs.map((d, i) => `
+    <div style="background:var(--bg-primary); padding:16px; border-radius:12px; border:1px solid var(--border); margin-bottom:12px; cursor:pointer;" onclick="openRawFeedbackModal(${i}, 'suggestions')" title="Click to view raw input IDs">
       <div style="display:flex; justify-content:space-between; align-items:center;">
         <h4 style="font-size:15px; font-weight:600; color:var(--info); margin:0;">${d.topic || 'Suggestion'}</h4>
         <button class="btn btn-outline" style="padding:4px 8px; font-size:11px;" onclick="toggleIssueStatus('${d.id}', '${d.status}', event)">
           ${d.status === 'pending' ? 'Mark Solved' : 'Mark Pending'}
         </button>
       </div>
-      <div style="font-size:12px; color:var(--fg-muted); margin-top:8px;">Frequency: ${d.frequency || 1}</div>
+      <div style="font-size:12px; color:var(--fg-muted); margin-top:8px;">Frequency: ${d.frequency || 1}${d.feedback_indices&&d.feedback_indices.length?' · Raw Inputs: '+d.feedback_indices.map(id=>'#'+id).join(', '):''}</div>
     </div>
   `).join('');
 }
@@ -940,7 +974,7 @@ function renderKPI(data) {
     { icon: 'fa-solid fa-circle-nodes', iconBg: 'var(--info-dim)', iconColor: 'var(--info)', label: 'Identified Clusters', value: data.clusters||0 },
     { icon: 'fa-solid fa-triangle-exclamation', iconBg: 'var(--danger-dim)', iconColor: 'var(--danger)', label: 'High Priority Issues', value: data.high_priority||0 },
     { icon: 'fa-solid fa-bolt', iconBg: 'var(--warning-dim)', iconColor: 'var(--warning)', label: 'Immediate Actions', value: data.immediate_actions||0 },
-    { icon: 'fa-solid fa-check-double', iconBg: 'var(--purple-dim)', iconColor: 'var(--purple)', label: 'Resolution Rate', value: `${data.resolution_rate||0}%` }
+    { icon: 'fa-solid fa-inbox', iconBg: 'var(--purple-dim)', iconColor: 'var(--purple)', label: 'Feedbacks Collected', value: (data.feedbacks_collected||data.total_feedback||0).toLocaleString() }
   ];
   grid.innerHTML = cards.map((c, i) => `
     <div class="kpi-card" style="animation:fadeUp 0.4s ease ${i * 0.07}s both;">
@@ -1112,30 +1146,45 @@ function renderFullPages(issues, clusters, actions) {
   if (aList && actions) {
     const badge = document.getElementById('actionItemsBadge');
     if (badge) badge.textContent = actions.length;
+    if (!actions.length) {
+      aList.innerHTML = '<div style="color:var(--fg-muted);padding:20px;text-align:center;">No action items found for this selection.</div>';
+      return;
+    }
     aList.innerHTML = actions.map(a => `
       <div style="background:var(--bg-primary); padding:16px; border-radius:8px; border-left:4px solid ${a.priority==='critical'?'var(--danger)':a.priority==='high'?'var(--warning)':'var(--info)'}; display:flex; align-items:center; gap:16px;">
-        <input type="checkbox" style="width:18px; height:18px; cursor:pointer;" onclick="showToast('Action item marked as resolved!', 'success'); this.disabled=true;" />
+        <input type="checkbox" style="width:18px; height:18px; cursor:pointer;" ${a.status==='solved'?'checked':''} onclick="toggleIssueStatus('${a.id}', '${a.status}', event)" />
         <div style="flex:1;">
           <div style="font-size:14px; font-weight:600;">${a.title}</div>
-          <div style="font-size:12px; color:var(--fg-muted); margin-top:4px;">${a.text}</div>
+          <div style="font-size:12px; color:var(--fg-muted); margin-top:4px;">${a.text}${a.source_ids&&a.source_ids.length?' · Raw Inputs: '+a.source_ids.map(id=>'#'+id).join(', '):''}</div>
         </div>
-        <button class="btn btn-outline" style="font-size:11px; padding:6px 12px;" onclick="showToast('Action successfully delegated.', 'success')">Delegate</button>
+        <button class="btn btn-outline" style="font-size:11px; padding:6px 12px;" onclick="toggleIssueStatus('${a.id}', '${a.status}', event)">${a.status === 'pending' ? 'Mark Solved' : 'Mark Pending'}</button>
       </div>`).join('');
   }
 }
 
 // ── Raw feedback modal ────────────────────────────────────────────────────────
 window.currentIssuesData = [];
-function openRawFeedbackModal(index) {
-  const issue = window.currentIssuesData[index];
+window.currentSuggestionsData = [];
+function openRawFeedbackModal(index, source = 'issues') {
+  const issue = source === 'suggestions' ? window.currentSuggestionsData[index] : window.currentIssuesData[index];
   if (!issue) return;
-  document.getElementById('rawFeedbackTitle').innerText = issue.name;
+  const title = issue.name || issue.topic || 'Feedback Source';
+  const sourceIds = issue.source_ids || issue.feedback_indices || [];
+  document.getElementById('rawFeedbackTitle').innerText = `${title}${sourceIds.length ? ' · Raw Inputs: ' + sourceIds.map(id => '#' + id).join(', ') : ''}`;
   const container = document.getElementById('rawFeedbackContent');
   if (issue.original_texts && issue.original_texts.length > 0) {
-    container.innerHTML = issue.original_texts.map(text => `
-      <div style="background:var(--bg-primary); padding:12px; border-radius:8px; border-left:3px solid var(--accent); font-size:13px; line-height:1.5;">${text}</div>`).join('');
+    container.innerHTML = issue.original_texts.map((text, i) => {
+      const rawId = sourceIds[i] !== undefined ? sourceIds[i] : i;
+      return `
+      <div style="background:var(--bg-primary); padding:12px; border-radius:8px; border-left:3px solid var(--accent); font-size:13px; line-height:1.5;">
+        <div style="font-size:11px; color:var(--accent); font-weight:600; margin-bottom:6px;">Raw Input #${rawId}</div>
+        ${text}
+      </div>`;
+    }).join('');
   } else {
-    container.innerHTML = `<div style="color:var(--fg-muted); font-size:13px; text-align:center; padding:20px;">No raw data available for this issue.</div>`;
+    container.innerHTML = sourceIds.length
+      ? sourceIds.map(id => `<div style="background:var(--bg-primary); padding:12px; border-radius:8px; border-left:3px solid var(--accent); font-size:13px; line-height:1.5;">Raw Input #${id}</div>`).join('')
+      : `<div style="color:var(--fg-muted); font-size:13px; text-align:center; padding:20px;">No raw data available for this item.</div>`;
   }
   document.getElementById('rawFeedbackModal').classList.add('active');
 }
@@ -1155,11 +1204,15 @@ function showToast(message, type = 'info') {
 }
 
 // ── Filter modal ──────────────────────────────────────────────────────────────
-function openFilterModal()  { document.getElementById('filterModal').classList.add('active'); }
+function openFilterModal()  {
+  document.getElementById('filterCategory').value = currentFilter.category || 'all';
+  document.getElementById('filterStatus').value = currentFilter.status || 'pending';
+  document.getElementById('filterModal').classList.add('active');
+}
 function closeFilterModal() { document.getElementById('filterModal').classList.remove('active'); }
 async function applyFilter() {
   currentFilter.category  = document.getElementById('filterCategory').value;
-  currentFilter.sentiment = document.getElementById('filterSentiment').value;
+  currentFilter.status = document.getElementById('filterStatus').value;
   closeFilterModal();
   showToast('Filters applied.', 'info');
   await loadDashboard();
@@ -1201,6 +1254,32 @@ function toggleTheme() {
   }
 }
 
+// ── Settings ─────────────────────────────────────────────────────────────────
+async function loadSettings() {
+  try {
+    const settings = await window.pywebview.api.get_settings();
+    const apiKeyInput = document.getElementById('settingsApiKey');
+    const usernameInput = document.getElementById('settingsUsername');
+    if (apiKeyInput) apiKeyInput.value = settings.api_key || '';
+    if (usernameInput) usernameInput.value = settings.username || '';
+  } catch (e) { console.error(e); }
+}
+
+async function saveSettings() {
+  const settings = {
+    api_key: document.getElementById('settingsApiKey').value,
+    username: document.getElementById('settingsUsername').value,
+    password: document.getElementById('settingsPassword').value
+  };
+  const result = await window.pywebview.api.save_settings(settings);
+  if (result && result.status === 'success') {
+    document.getElementById('settingsPassword').value = '';
+    showToast('Settings saved.', 'success');
+  } else {
+    showToast(result.message || 'Settings could not be saved.', 'error');
+  }
+}
+
 // ── Activity logs ─────────────────────────────────────────────────────────────
 async function loadActivities() {
   try {
@@ -1213,6 +1292,16 @@ async function loadActivities() {
         <span style="color:var(--fg-muted); font-size:11px; float:right;">${a.time}</span>
       </div>`).join('');
   } catch (e) { console.error(e); }
+}
+
+async function clearActivities() {
+  const result = await window.pywebview.api.clear_activities();
+  if (result && result.status === 'success') {
+    showToast('Previous logs cleared.', 'success');
+    await loadActivities();
+  } else {
+    showToast(result.message || 'Could not clear logs.', 'error');
+  }
 }
 
 function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
@@ -1243,6 +1332,7 @@ async function loadDashboard() {
 // ── Boot ──────────────────────────────────────────────────────────────────────
 window.addEventListener('pywebviewready', async () => {
   await populateFileDropdown();
+  await loadSettings();
   await loadDashboard();
   const overlay = document.getElementById('loadingOverlay');
   if (overlay) { overlay.classList.add('hidden'); setTimeout(() => overlay.remove(), 600); }
