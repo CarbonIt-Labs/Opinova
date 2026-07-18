@@ -4,10 +4,7 @@ import time
 import sys
 import argparse
 from typing import List, Dict, Any
-import uvicorn
-from fastapi import FastAPI, UploadFile, File
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+import webview
 from dotenv import load_dotenv
 
 # Core analysis imports
@@ -20,17 +17,7 @@ from config import BATCH_SIZE
 
 load_dotenv()
 
-# Initialize FastAPI
-app = FastAPI(title="Opinova Backend")
-
-# STRICT CORS - This is required so port 3000 (UI) can talk to port 8000 (Backend)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Core analysis imports
 
 def load_data() -> List[Dict[str, Any]]:
     """Robustly find and load the JSON file, no matter where the script is run from."""
@@ -55,12 +42,14 @@ def load_data() -> List[Dict[str, Any]]:
 
 PROCESSED_FILE = "data/processed_results.json"
 
-def run_analysis(filepath: str):
+def run_analysis(filepath: str, api_ref=None):
+    if api_ref: api_ref.log_activity(f"System started analysis on {filepath}.")
     print(f"Loading data from {filepath}...")
     try:
         df = load_file(filepath)
     except FileNotFoundError:
         print(f"File {filepath} not found. Ensure it exists in the correct folder.")
+        if api_ref: api_ref.log_activity(f"Error: File {filepath} not found.")
         return
         
     if len(df.columns) == 1:
@@ -135,6 +124,7 @@ def run_analysis(filepath: str):
         json.dump(scored_clusters, f, indent=4)
         
     print(f"Analysis complete. Results saved.")
+    if api_ref: api_ref.log_activity(f"System completed analysis and saved results.")
     print_top_issues(scored_clusters)
 
 def load_processed_results():
@@ -148,161 +138,202 @@ def load_processed_results():
 #          EXACT ROUTE MATCHES              #
 # ==========================================
 
-@app.get("/api/v1/dashboard/kpi")
-def get_kpi():
-    clusters = load_data()
-    if not clusters:
+class Api:
+    def __init__(self):
+        self._window = None
+        self.activities = []
+        import datetime
+        self.log_activity("Admin accessed Dashboard.")
+        self.log_activity(f"System initialized at {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        
+    def log_activity(self, message):
+        import datetime
+        self.activities.append({
+             "message": message,
+             "time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        })
+
+    def get_activities(self):
+        return self.activities[::-1][:50]
+
+    def get_kpi(self, filter_params=None):
+        clusters = load_data()
+        if not clusters:
+            return {
+                "total_feedback": 0, "total_feedback_change": 0,
+                "clusters": 0, "clusters_new": 0,
+                "high_priority": 0, "high_priority_change": 0,
+                "immediate_actions": 0, "immediate_actions_change": 0,
+                "resolution_rate": 0, "resolution_rate_change": 0
+            }
+
+        total_feedback = sum([c.get('frequency', 1) for c in clusters])
+        high_priority = len([c for c in clusters if c.get('priority_score', 0) >= 70])
+        immediate = len([c for c in clusters if c.get('category') == "Immediate Action Required"])
+
         return {
-            "total_feedback": 0, "total_feedback_change": 0,
-            "clusters": 0, "clusters_new": 0,
-            "high_priority": 0, "high_priority_change": 0,
-            "immediate_actions": 0, "immediate_actions_change": 0,
-            "resolution_rate": 0, "resolution_rate_change": 0
+            "total_feedback": total_feedback,
+            "total_feedback_change": 14.5,
+            "clusters": len(clusters),
+            "clusters_new": 1,
+            "high_priority": high_priority,
+            "high_priority_change": 1,
+            "immediate_actions": immediate,
+            "immediate_actions_change": 0,
+            "resolution_rate": 88,
+            "resolution_rate_change": 4.2
         }
 
-    total_feedback = sum([c.get('frequency', 1) for c in clusters])
-    high_priority = len([c for c in clusters if c.get('priority_score', 0) >= 70])
-    immediate = len([c for c in clusters if c.get('category') == "Immediate Action Required"])
-
-    return {
-        "total_feedback": total_feedback,
-        "total_feedback_change": 14.5,
-        "clusters": len(clusters),
-        "clusters_new": 1,
-        "high_priority": high_priority,
-        "high_priority_change": 1,
-        "immediate_actions": immediate,
-        "immediate_actions_change": 0,
-        "resolution_rate": 88,
-        "resolution_rate_change": 4.2
-    }
-
-@app.get("/api/v1/dashboard/matrix")
-def get_matrix():
-    clusters = load_data()
-    matrix_points = []
-    
-    for c in clusters:
-        score = c.get('priority_score', 0)
-        if score >= 85: sev = "critical"
-        elif score >= 70: sev = "high"
-        elif score >= 50: sev = "medium"
-        else: sev = "low"
-
-        matrix_points.append({
-            "name": c.get("topic", "Unassigned Issue"),
-            "x": c.get("urgency", 5) / 10.0,  # Scaled for 0.0-1.0 chart axis
-            "y": c.get("impact", 5) / 10.0,   # Scaled for 0.0-1.0 chart axis
-            "score": score,
-            "severity": sev
-        })
-    return matrix_points
-
-@app.get("/api/v1/dashboard/issues")
-def get_issues():
-    clusters = load_data()
-    sorted_clusters = sorted(clusters, key=lambda x: x.get('priority_score', 0), reverse=True)
-    
-    issues_list = []
-    for i, c in enumerate(sorted_clusters[:8]):
-        issues_list.append({
-            "rank": i + 1,
-            "name": c.get("topic", "Unknown Cluster"),
-            "category": c.get("issue_type", "General feedback"),
-            "mentions": c.get("frequency", 1),
-            "score": c.get("priority_score", 0),
-            "source_ids": c.get("feedback_indices", []),
-            "original_texts": c.get("original_texts", [])
-        })
-    return issues_list
-
-@app.get("/api/v1/dashboard/clusters_detail")
-def get_clusters_detail():
-    clusters = load_data()
-    return clusters
-
-@app.get("/api/v1/dashboard/sentiment")
-def get_sentiment():
-    return {"positive": 68, "neutral": 20, "negative": 12}
-
-@app.get("/api/v1/dashboard/sentiment/trend")
-def get_sentiment_trend():
-    return [58, 60, 61, 59, 64, 66, 65, 68, 70, 72, 71, 73]
-
-@app.get("/api/v1/dashboard/trend")
-def get_trend():
-    clusters = load_data()
-    sample = clusters[:4]
-    
-    positive_list = []
-    neutral_list = []
-    negative_list = []
-    
-    for c in sample:
-        freq = c.get("frequency", 1)
-        score = c.get("priority_score", 0)
+    def get_matrix(self, filter_params=None):
+        clusters = load_data()
+        matrix_points = []
         
-        if score >= 70:
-            positive_list.append(int(freq * 0.1))
-            neutral_list.append(int(freq * 0.2))
-            negative_list.append(max(1, int(freq * 0.7)))
-        elif score >= 50:
-            positive_list.append(int(freq * 0.3))
-            neutral_list.append(int(freq * 0.4))
-            negative_list.append(int(freq * 0.3))
-        else:
-            positive_list.append(max(1, int(freq * 0.7)))
-            neutral_list.append(int(freq * 0.2))
-            negative_list.append(int(freq * 0.1))
+        for c in clusters:
+            score = c.get('priority_score', 0)
+            if score >= 85: sev = "critical"
+            elif score >= 70: sev = "high"
+            elif score >= 50: sev = "medium"
+            else: sev = "low"
+
+            matrix_points.append({
+                "name": c.get("topic", "Unassigned Issue"),
+                "x": c.get("urgency", 5) / 10.0,  # Scaled for 0.0-1.0 chart axis
+                "y": c.get("impact", 5) / 10.0,   # Scaled for 0.0-1.0 chart axis
+                "score": score,
+                "severity": sev
+            })
+        return matrix_points
+
+    def get_issues(self, filter_params=None):
+        clusters = load_data()
+        sorted_clusters = sorted(clusters, key=lambda x: x.get('priority_score', 0), reverse=True)
+        
+        issues_list = []
+        for i, c in enumerate(sorted_clusters[:8]):
+            issues_list.append({
+                "rank": i + 1,
+                "name": c.get("topic", "Unknown Cluster"),
+                "category": c.get("issue_type", "General feedback"),
+                "mentions": c.get("frequency", 1),
+                "score": c.get("priority_score", 0),
+                "source_ids": c.get("feedback_indices", []),
+                "original_texts": c.get("original_texts", [])
+            })
+        return issues_list
+
+    def get_clusters_detail(self, filter_params=None):
+        clusters = load_data()
+        return clusters
+
+    def get_sentiment(self, filter_params=None):
+        clusters = load_data()
+        if not clusters:
+             return {"positive": 0, "neutral": 0, "negative": 0}
+        pos = neu = neg = 0
+        for c in clusters:
+             score = c.get('priority_score', 0)
+             freq = c.get('frequency', 1)
+             if score >= 70:
+                  neg += freq
+             elif score >= 50:
+                  neu += freq
+             else:
+                  pos += freq
+        total = pos + neu + neg
+        if total == 0: return {"positive": 0, "neutral": 0, "negative": 0}
+        return {
+             "positive": int((pos/total)*100),
+             "neutral": int((neu/total)*100),
+             "negative": int((neg/total)*100)
+        }
+
+    def get_trend(self, filter_params=None):
+        clusters = load_data()
+        sample = clusters[:4]
+        
+        positive_list = []
+        neutral_list = []
+        negative_list = []
+        
+        for c in sample:
+            freq = c.get("frequency", 1)
+            score = c.get("priority_score", 0)
             
-    return {
-        "labels": [c.get("topic", "Topic")[:15] for c in sample] if sample else ["No Data"],
-        "positive": positive_list if sample else [0],
-        "neutral": neutral_list if sample else [0],
-        "negative": negative_list if sample else [0],
-    }
+            if score >= 70:
+                positive_list.append(int(freq * 0.1))
+                neutral_list.append(int(freq * 0.2))
+                negative_list.append(max(1, int(freq * 0.7)))
+            elif score >= 50:
+                positive_list.append(int(freq * 0.3))
+                neutral_list.append(int(freq * 0.4))
+                negative_list.append(int(freq * 0.3))
+            else:
+                positive_list.append(max(1, int(freq * 0.7)))
+                neutral_list.append(int(freq * 0.2))
+                negative_list.append(int(freq * 0.1))
+                
+        return {
+            "labels": [c.get("topic", "Topic")[:15] for c in sample] if sample else ["No Data"],
+            "positive": positive_list if sample else [0],
+            "neutral": neutral_list if sample else [0],
+            "negative": negative_list if sample else [0],
+        }
 
-@app.get("/api/v1/dashboard/recommendations")
-def get_recommendations():
-    clusters = load_data()
-    sorted_clusters = sorted(clusters, key=lambda x: x.get('priority_score', 0), reverse=True)
-    
-    recommendations = []
-    for c in sorted_clusters[:3]:
-        score = c.get('priority_score', 0)
-        if score >= 85: sev = "critical"
-        elif score >= 70: sev = "high"
-        else: sev = "medium"
+    def get_recommendations(self, filter_params=None):
+        clusters = load_data()
+        sorted_clusters = sorted(clusters, key=lambda x: x.get('priority_score', 0), reverse=True)
+        
+        recommendations = []
+        for c in sorted_clusters[:3]:
+            score = c.get('priority_score', 0)
+            if score >= 85: sev = "critical"
+            elif score >= 70: sev = "high"
+            else: sev = "medium"
 
-        recommendations.append({
-            "title": f"Action Required: {c.get('topic')}",
-            "text": c.get('recommended_action', 'Review this feedback manually.'),
-            "priority": sev,
-            "source_ids": c.get("feedback_indices", [])
-        })
-    return recommendations
+            recommendations.append({
+                "title": f"Action Required: {c.get('topic')}",
+                "text": c.get('recommended_action', 'Review this feedback manually.'),
+                "priority": sev,
+                "source_ids": c.get("feedback_indices", [])
+            })
+        return recommendations
 
-# --- Dummy routes for UI buttons to prevent crashes ---
+    # --- Dummy routes for UI buttons to prevent crashes ---
 
-@app.post("/api/v1/upload")
-async def upload_file(file: UploadFile = File(...)):
-    time.sleep(1) # Simulate processing
-    return {"status": "success", "message": "File parsed successfully"}
+    def upload_csv(self):
+        if self._window:
+            file_types = ('CSV files (*.csv)', 'All files (*.*)')
+            result = self._window.create_file_dialog(webview.OPEN_DIALOG, allow_multiple=False, file_types=file_types)
+            if result and len(result) > 0:
+                filepath = result[0]
+                import pandas as pd
+                import uuid
+                try:
+                    df = pd.read_csv(filepath)
+                    if 'feedback_id' not in df.columns:
+                        df['feedback_id'] = [str(uuid.uuid4())[:8] for _ in range(len(df))]
+                        df.to_csv(filepath, index=False)
+                    self.log_activity(f"Uploaded CSV and assigned IDs to {len(df)} rows.")
+                    run_analysis(filepath, api_ref=self)
+                    return {"status": "success", "message": "File parsed and analyzed successfully"}
+                except Exception as e:
+                    self.log_activity(f"Error processing CSV: {str(e)}")
+                    return {"status": "error", "message": str(e)}
+        return {"status": "error", "message": "No file selected"}
 
-@app.post("/api/v1/dashboard/export")
-def export_dashboard():
-    os.makedirs("exports", exist_ok=True)
-    file_path = "exports/Opinova_Report.txt"
-    with open(file_path, "w") as f:
-        f.write("Opinova Dashboard Export Data.")
-    return {"status": "success", "download_url": "/reports/download"}
-
-@app.get("/api/v1/reports/download")
-def download_report():
-    file_path = "exports/Opinova_Report.txt"
-    if os.path.exists(file_path):
-         return FileResponse(file_path, filename="Opinova_Report.txt")
-    return {"error": "File not found"}
+    def export_dashboard(self, filter_params=None):
+        clusters = load_data()
+        if not clusters:
+             return {"status": "error", "message": "No data to export"}
+        if self._window:
+            result = self._window.create_file_dialog(webview.SAVE_DIALOG, allow_multiple=False, save_filename="Opinova_Report.csv")
+            if result and len(result) > 0:
+                import pandas as pd
+                df = pd.DataFrame(clusters)
+                df.to_csv(result[0], index=False)
+                self.log_activity(f"Exported report to {result[0]}")
+                return {"status": "success"}
+        return {"status": "error"}
 
 # ==========================================
 #          APP STARTUP LOGIC                #
@@ -325,7 +356,8 @@ def main():
     args = parser.parse_args()
     
     if args.command == "analyze":
-        run_analysis(args.file)
+        api_ref = Api()
+        run_analysis(args.file, api_ref=api_ref)
     elif args.command == "summary":
         clusters = load_processed_results()
         print_summary(clusters)
@@ -336,8 +368,12 @@ def main():
         clusters = load_processed_results()
         export_report(clusters, args.output)
     elif args.command == "serve" or args.command is None:
-        print("Starting Opinova API Server on http://localhost:8000")
-        uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=False)
+        print("Starting Opinova Desktop App...")
+        api = Api()
+        html_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "index.html")
+        html_url = f"file:///{html_path.replace('//', '/')}"
+        api._window = webview.create_window("Opinova — Dashboard", url=html_url, js_api=api, width=1200, height=800)
+        webview.start()
     else:
         parser.print_help()
 
