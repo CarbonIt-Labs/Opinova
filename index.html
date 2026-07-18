@@ -1,635 +1,1031 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Opinova | Decision Intelligence Platform</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        :root {
-            --bg-color: #0b0f19;
-            --surface: rgba(255, 255, 255, 0.03);
-            --surface-border: rgba(255, 255, 255, 0.08);
-            --primary: #3b82f6;
-            --primary-glow: rgba(59, 130, 246, 0.5);
-            --secondary: #06b6d4;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --danger: #ef4444;
-            --success: #10b981;
-            --warning: #f59e0b;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Opinova — Dashboard</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg-primary: #0a0e17;
+    --bg-secondary: #111827;
+    --bg-card: #151c2c;
+    --bg-card-hover: #1a2338;
+    --border: #1e293b;
+    --border-light: #2a3a52;
+    --fg: #e2e8f0;
+    --fg-muted: #8896ab;
+    --fg-dim: #5a6a80;
+    --accent: #00d4aa;
+    --accent-dim: rgba(0,212,170,0.12);
+    --accent-glow: rgba(0,212,170,0.25);
+    --warning: #f59e0b;
+    --warning-dim: rgba(245,158,11,0.12);
+    --danger: #ef4444;
+    --danger-dim: rgba(239,68,68,0.12);
+    --info: #38bdf8;
+    --info-dim: rgba(56,189,248,0.12);
+    --purple: #a78bfa;
+    --purple-dim: rgba(167,139,250,0.12);
+  }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Inter', sans-serif;
-        }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg-primary);
+    color: var(--fg);
+    overflow-x: hidden;
+  }
+  h1,h2,h3,h4,h5,h6 { font-family: 'Space Grotesk', sans-serif; }
 
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            overflow-x: hidden;
-            line-height: 1.6;
-        }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg-primary); }
+  ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--fg-dim); }
 
-        /* Reusable Glassmorphism */
-        .glass {
-            background: var(--surface);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid var(--surface-border);
-            border-radius: 16px;
-        }
+  .sidebar {
+    position: fixed; left:0; top:0; bottom:0;
+    width: 240px;
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border);
+    z-index: 50;
+    display: flex; flex-direction: column;
+    transition: transform 0.3s ease;
+  }
+  .sidebar-logo {
+    padding: 20px 20px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-logo h2 {
+    font-size: 18px; font-weight: 700;
+    background: linear-gradient(135deg, var(--accent), #38bdf8);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .sidebar-logo span { font-size: 11px; color: var(--fg-dim); display:block; margin-top:2px; }
+  .sidebar-nav { flex:1; padding: 12px 10px; overflow-y:auto; }
+  .nav-section { margin-bottom: 20px; }
+  .nav-section-title {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px;
+    color: var(--fg-dim); padding: 0 10px; margin-bottom: 6px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px; border-radius: 8px;
+    color: var(--fg-muted); font-size: 13.5px; font-weight: 500;
+    cursor: pointer; transition: all 0.2s; position: relative;
+  }
+  .nav-item:hover { background: rgba(255,255,255,0.04); color: var(--fg); }
+  .nav-item.active {
+    background: var(--accent-dim); color: var(--accent);
+  }
+  .nav-item.active::before {
+    content:''; position:absolute; left:0; top:50%; transform:translateY(-50%);
+    width:3px; height:20px; background:var(--accent); border-radius:0 3px 3px 0;
+  }
+  .nav-item i { width:18px; text-align:center; font-size:14px; }
+  .nav-badge {
+    margin-left:auto; font-size:10px; padding:2px 7px;
+    border-radius:10px; font-weight:600;
+  }
 
-        /* Typography */
-        h1, h2, h3 { line-height: 1.2; font-weight: 700; }
-        .gradient-text {
-            background: linear-gradient(135deg, var(--secondary), var(--primary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        
-        /* Layout */
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 24px;
-        }
-        section {
-            padding: 100px 0;
-        }
+  .main-area {
+    margin-left: 240px;
+    min-height: 100vh;
+    position: relative;
+  }
 
-        /* Buttons */
-        .btn {
-            display: inline-block;
-            padding: 14px 28px;
-            border-radius: 8px;
-            font-weight: 600;
-            text-decoration: none;
-            transition: all 0.3s ease;
-            cursor: pointer;
-            border: none;
-            font-size: 1rem;
-        }
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-            box-shadow: 0 0 15px var(--primary-glow);
-        }
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 0 25px var(--primary-glow);
-        }
-        .btn-secondary {
-            background: transparent;
-            color: var(--text-main);
-            border: 1px solid var(--surface-border);
-        }
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
+  .bg-glow {
+    position: fixed; top: -120px; right: -120px;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+    pointer-events: none; z-index:0; opacity:0.4;
+    animation: glowPulse 8s ease-in-out infinite;
+  }
+  .bg-glow-2 {
+    position: fixed; bottom: -150px; left: 200px;
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(56,189,248,0.1) 0%, transparent 70%);
+    pointer-events: none; z-index:0; opacity:0.3;
+    animation: glowPulse 10s ease-in-out infinite reverse;
+  }
+  @keyframes glowPulse {
+    0%,100% { transform: scale(1); opacity:0.3; }
+    50% { transform: scale(1.15); opacity:0.5; }
+  }
 
-        /* Navbar */
-        nav {
-            padding: 24px 0;
-            position: fixed;
-            width: 100%;
-            top: 0;
-            z-index: 100;
-            background: rgba(11, 15, 25, 0.8);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid var(--surface-border);
-        }
-        .nav-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .logo {
-            font-size: 1.5rem;
-            font-weight: 800;
-            letter-spacing: -0.5px;
-        }
+  .topbar {
+    position: sticky; top:0; z-index:40;
+    padding: 14px 28px;
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(10,14,23,0.8);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+  }
+  .topbar-left h1 { font-size:20px; font-weight:700; }
+  .topbar-left p { font-size:12.5px; color:var(--fg-muted); margin-top:1px; }
+  .topbar-right { display:flex; align-items:center; gap:10px; }
+  .date-range {
+    display:flex; align-items:center; gap:6px;
+    background: var(--bg-card); border:1px solid var(--border);
+    padding: 7px 14px; border-radius:8px; font-size:13px; color:var(--fg-muted);
+  }
+  .date-range i { color:var(--accent); font-size:12px; }
+  .btn {
+    display:inline-flex; align-items:center; gap:6px;
+    padding: 7px 16px; border-radius:8px; font-size:13px; font-weight:500;
+    border:none; cursor:pointer; transition:all 0.2s;
+  }
+  .btn-outline {
+    background:transparent; border:1px solid var(--border-light);
+    color:var(--fg-muted);
+  }
+  .btn-outline:hover { border-color:var(--accent); color:var(--accent); }
+  .btn-accent {
+    background: var(--accent); color: #0a0e17; font-weight:600;
+  }
+  .btn-accent:hover { background:#00eabb; box-shadow:0 0 20px var(--accent-glow); }
 
-        /* Hero Section */
-        #hero {
-            padding: 160px 0 100px;
-            text-align: center;
-            position: relative;
-        }
-        .hero-bg-glow {
-            position: absolute;
-            top: 20%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 600px;
-            height: 600px;
-            background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(11,15,25,0) 70%);
-            z-index: -1;
-        }
-        #hero h1 {
-            font-size: 4rem;
-            margin-bottom: 24px;
-            letter-spacing: -1px;
-        }
-        #hero p {
-            font-size: 1.25rem;
-            color: var(--text-muted);
-            max-width: 700px;
-            margin: 0 auto 40px;
-        }
-        .btn-group {
-            display: flex;
-            gap: 16px;
-            justify-content: center;
-            margin-bottom: 80px;
-        }
+  .content { padding: 24px 28px; position:relative; z-index:1; }
 
-        /* Hero Dashboard Mockup */
-        .dashboard-mini {
-            padding: 24px;
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-            text-align: left;
-            max-width: 900px;
-            margin: 0 auto;
-            position: relative;
-        }
-        .dashboard-mini::before {
-            content: '';
-            position: absolute;
-            top: -1px; left: -1px; right: -1px; bottom: -1px;
-            background: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0));
-            border-radius: 16px;
-            z-index: -1;
-            padding: 1px;
-            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-            -webkit-mask-composite: xor;
-            mask-composite: exclude;
-        }
-        .stat-card {
-            padding: 20px;
-            border-radius: 12px;
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid var(--surface-border);
-        }
-        .stat-card h4 { color: var(--text-muted); font-size: 0.9rem; font-weight: 500; margin-bottom: 8px;}
-        .stat-card .value { font-size: 2rem; font-weight: 700; }
-        .text-danger { color: var(--danger); }
-        .text-primary { color: var(--primary); }
-        .text-success { color: var(--success); }
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .kpi-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+  }
+  .kpi-card:hover {
+    border-color: var(--border-light);
+    background: var(--bg-card-hover);
+    transform: translateY(-2px);
+  }
+  .kpi-card::after {
+    content:''; position:absolute; top:0; right:0;
+    width:80px; height:80px;
+    border-radius:50%;
+    filter: blur(40px);
+    opacity:0.15;
+    pointer-events:none;
+  }
+  .kpi-card:nth-child(1)::after { background: var(--accent); }
+  .kpi-card:nth-child(2)::after { background: var(--info); }
+  .kpi-card:nth-child(3)::after { background: var(--danger); }
+  .kpi-card:nth-child(4)::after { background: var(--warning); }
+  .kpi-card:nth-child(5)::after { background: var(--purple); }
 
-        /* Problem Section */
-        #problem { text-align: center; }
-        .problem-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 24px;
-            margin: 40px auto;
-            max-width: 800px;
-        }
-        .problem-item {
-            padding: 24px;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            text-align: left;
-        }
-        .problem-item i { color: var(--danger); font-size: 1.5rem; }
-        .solution-transition {
-            font-size: 1.8rem;
-            font-weight: 600;
-            margin-top: 60px;
-        }
+  .kpi-icon {
+    width:36px; height:36px; border-radius:9px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:15px; margin-bottom:12px;
+  }
+  .kpi-label { font-size:12px; color:var(--fg-muted); margin-bottom:6px; font-weight:500; }
+  .kpi-value { font-family:'Space Grotesk',sans-serif; font-size:26px; font-weight:700; line-height:1; }
+  .kpi-change {
+    display:inline-flex; align-items:center; gap:3px;
+    font-size:11.5px; font-weight:600; margin-top:8px;
+    padding:2px 8px; border-radius:6px;
+  }
+  .kpi-change.up { color:#22c55e; background:rgba(34,197,94,0.1); }
+  .kpi-change.down { color:var(--danger); background:var(--danger-dim); }
+  .kpi-sub { font-size:11px; color:var(--fg-dim); margin-top:4px; }
 
-        /* How it Works */
-        .step-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 20px;
-            margin-top: 60px;
-            position: relative;
-        }
-        .step {
-            flex: 1;
-            text-align: center;
-            padding: 32px 24px;
-            z-index: 2;
-        }
-        .step-icon {
-            width: 64px;
-            height: 64px;
-            background: rgba(59, 130, 246, 0.1);
-            color: var(--primary);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            margin: 0 auto 20px;
-            border: 1px solid rgba(59, 130, 246, 0.2);
-        }
-        .step h3 { margin-bottom: 12px; }
-        .step p { color: var(--text-muted); font-size: 0.9rem; }
-        
-        /* Features */
-        .section-header { text-align: center; margin-bottom: 60px; }
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 24px;
-        }
-        .feature-card {
-            padding: 32px;
-            transition: transform 0.3s ease;
-        }
-        .feature-card:hover { transform: translateY(-5px); }
-        .feature-icon {
-            font-size: 2rem;
-            color: var(--secondary);
-            margin-bottom: 20px;
-        }
-        .feature-card h3 { margin-bottom: 12px; font-size: 1.25rem; }
-        .feature-card p { color: var(--text-muted); font-size: 0.95rem; }
+  .mid-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
 
-        /* Dashboard Preview Detailed */
-        .preview-mockup {
-            margin: 60px auto 0;
-            max-width: 900px;
-            padding: 0;
-            overflow: hidden;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-        }
-        .preview-header {
-            background: rgba(255,255,255,0.05);
-            padding: 16px 24px;
-            border-bottom: 1px solid var(--surface-border);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .dots { display: flex; gap: 6px; }
-        .dot { width: 10px; height: 10px; border-radius: 50%; background: #475569; }
-        .preview-body { padding: 40px; }
-        .priority-alert {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.2);
-            padding: 24px;
-            border-radius: 12px;
-            margin-bottom: 24px;
-            border-left: 4px solid var(--danger);
-        }
-        .alert-header { display: flex; justify-content: space-between; margin-bottom: 16px; }
-        .score-badge { background: var(--danger); color: white; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 0.9rem;}
-        .ai-reasoning { background: rgba(0,0,0,0.3); padding: 16px; border-radius: 8px; margin-top: 16px; border: 1px solid var(--surface-border);}
-        .ai-reasoning i { color: var(--primary); margin-right: 8px;}
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+  .card:hover { border-color: var(--border-light); }
+  .card-header {
+    padding: 16px 18px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+  .card-header h3 { font-size:14.5px; font-weight:600; }
+  .card-header .badge {
+    font-size:10.5px; padding:3px 9px; border-radius:6px; font-weight:600;
+  }
+  .card-body { padding: 18px; }
 
-        /* Use Cases */
-        .use-cases-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 24px;
-        }
-        .use-case { padding: 40px 32px; text-align: center; }
-        .use-case h3 { font-size: 1.5rem; margin: 20px 0 16px; }
-        .use-case ul { list-style: none; text-align: left; color: var(--text-muted); }
-        .use-case li { margin-bottom: 12px; display: flex; gap: 12px; }
-        .use-case li i { color: var(--success); margin-top: 4px; }
+  .matrix-container {
+    display: grid;
+    grid-template-columns: 60px 1fr;
+    grid-template-rows: 1fr 24px;
+    height: 260px;
+    gap: 4px;
+  }
+  .matrix-y-axis {
+    display:flex; flex-direction:column; justify-content:space-between;
+    align-items:center; padding-bottom:4px;
+  }
+  .matrix-y-axis span { font-size:9px; color:var(--fg-dim); }
+  .matrix-plot {
+    position:relative;
+    border:1px solid var(--border);
+    border-radius:6px;
+    background: rgba(0,0,0,0.2);
+    overflow:hidden;
+  }
+  .matrix-plot::before {
+    content:''; position:absolute;
+    top:50%; left:0; right:0;
+    height:1px; background:var(--border); opacity:0.6;
+  }
+  .matrix-plot::after {
+    content:''; position:absolute;
+    left:50%; top:0; bottom:0;
+    width:1px; background:var(--border); opacity:0.6;
+  }
+  .matrix-x-axis {
+    display:flex; justify-content:space-between; align-items:center;
+    padding-left:60px;
+  }
+  .matrix-x-axis span { font-size:9px; color:var(--fg-dim); }
+  .matrix-dot {
+    position:absolute; width:12px; height:12px; border-radius:50%;
+    transform:translate(-50%,-50%);
+    cursor:pointer; transition: all 0.3s;
+    z-index:2;
+  }
+  .matrix-dot:hover { transform:translate(-50%,-50%) scale(1.6); z-index:5; }
+  .matrix-dot .dot-tooltip {
+    position:absolute; bottom:calc(100% + 8px); left:50%; transform:translateX(-50%);
+    background:var(--bg-secondary); border:1px solid var(--border-light);
+    padding:6px 10px; border-radius:6px; white-space:nowrap;
+    font-size:11px; pointer-events:none; opacity:0; transition:opacity 0.2s;
+    z-index:10;
+  }
+  .matrix-dot:hover .dot-tooltip { opacity:1; }
 
-        /* Vision & About */
-        #vision { text-align: center; background: linear-gradient(to bottom, rgba(11,15,25,0), rgba(59,130,246,0.05), rgba(11,15,25,0)); }
-        #vision h2 { font-size: 3rem; margin-bottom: 24px; }
-        #vision p { font-size: 1.25rem; color: var(--text-muted); max-width: 800px; margin: 0 auto; }
-        
-        #about { text-align: center; }
-        .about-card { max-width: 600px; margin: 0 auto; padding: 40px; }
-        .dev-by { color: var(--primary); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; font-size: 0.9rem; margin-bottom: 16px;}
+  .issue-item {
+    display:flex; align-items:center; gap:12px;
+    padding:12px 0;
+    border-bottom:1px solid var(--border);
+  }
+  .issue-item:last-child { border-bottom:none; }
+  .issue-rank {
+    width:26px; height:26px; border-radius:7px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:12px; font-weight:700; flex-shrink:0;
+  }
+  .issue-info { flex:1; min-width:0; }
+  .issue-name { font-size:13px; font-weight:600; margin-bottom:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .issue-meta { font-size:11px; color:var(--fg-dim); }
+  .issue-score {
+    font-family:'Space Grotesk',sans-serif;
+    font-size:18px; font-weight:700; flex-shrink:0;
+  }
+  .issue-bar-bg {
+    width:80px; height:5px; border-radius:3px;
+    background:rgba(255,255,255,0.06); flex-shrink:0; overflow:hidden;
+  }
+  .issue-bar-fill { height:100%; border-radius:3px; transition:width 1s ease; }
 
-        /* CTA */
-        #cta { text-align: center; padding: 120px 0; border-top: 1px solid var(--surface-border); }
-        #cta h2 { font-size: 2.5rem; margin-bottom: 40px; }
+  .bottom-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+  }
 
-        /* Footer */
-        footer {
-            border-top: 1px solid var(--surface-border);
-            padding: 40px 0;
-            text-align: center;
-            color: var(--text-muted);
-            font-size: 0.9rem;
-        }
-        .footer-links { margin-bottom: 16px; }
-        .footer-links a { color: var(--text-muted); text-decoration: none; margin: 0 12px; transition: color 0.3s; }
-        .footer-links a:hover { color: var(--primary); }
+  .sentiment-ring {
+    width:140px; height:140px; margin:0 auto 14px; position:relative;
+  }
+  .sentiment-center {
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    text-align:center;
+  }
+  .sentiment-center .val { font-family:'Space Grotesk',sans-serif; font-size:28px; font-weight:700; color:var(--accent); }
+  .sentiment-center .lbl { font-size:10px; color:var(--fg-dim); }
+  .sentiment-legend { display:flex; flex-direction:column; gap:8px; }
+  .legend-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .legend-val { margin-left:auto; font-weight:600; font-size:12px; }
 
-        /* Animations */
-        .reveal { opacity: 0; transform: translateY(30px); transition: all 0.8s ease-out; }
-        .reveal.active { opacity: 1; transform: translateY(0); }
+  .ai-suggestion {
+    padding:14px; border-radius:10px;
+    background: linear-gradient(135deg, rgba(0,212,170,0.06), rgba(56,189,248,0.06));
+    border:1px solid rgba(0,212,170,0.15);
+    margin-bottom:12px;
+  }
+  .ai-suggestion:last-child { margin-bottom:0; }
+  .ai-suggestion-header {
+    display:flex; align-items:center; gap:8px; margin-bottom:8px;
+  }
+  .ai-icon {
+    width:24px; height:24px; border-radius:6px;
+    background: var(--accent-dim); color:var(--accent);
+    display:flex; align-items:center; justify-content:center;
+    font-size:11px;
+  }
+  .ai-suggestion-header span { font-size:12.5px; font-weight:600; }
+  .ai-suggestion p { font-size:12px; color:var(--fg-muted); line-height:1.6; }
 
-        /* Responsive */
-        @media (max-width: 900px) {
-            #hero h1 { font-size: 2.5rem; }
-            .dashboard-mini, .problem-grid, .step-container, .features-grid, .use-cases-grid {
-                grid-template-columns: 1fr;
-                flex-direction: column;
-            }
-            .step-container { gap: 40px; }
-            .btn-group { flex-direction: column; }
-        }
-    </style>
+  .trend-sparkline { height:36px; margin-top:8px; }
+  .trend-sparkline canvas { width:100%!important; height:100%!important; }
+
+  .loading-overlay {
+    position:fixed; inset:0; z-index:9999;
+    background:var(--bg-primary);
+    display:flex; align-items:center; justify-content:center;
+    flex-direction:column; gap:16px;
+    transition: opacity 0.5s;
+  }
+  .loading-overlay.hidden { opacity:0; pointer-events:none; }
+  .loader-ring {
+    width:40px; height:40px; border-radius:50%;
+    border:3px solid var(--border);
+    border-top-color: var(--accent);
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  .toast-container {
+    position:fixed; top:20px; right:20px; z-index:9998;
+    display:flex; flex-direction:column; gap:8px;
+  }
+  .toast {
+    background:var(--bg-card); border:1px solid var(--border-light);
+    padding:12px 18px; border-radius:10px;
+    font-size:13px; display:flex; align-items:center; gap:10px;
+    box-shadow:0 8px 32px rgba(0,0,0,0.4);
+    animation: slideIn 0.3s ease;
+    max-width: 340px;
+  }
+  @keyframes slideIn { from { transform:translateX(100%); opacity:0; } to { transform:translateX(0); opacity:1; } }
+  .toast.success { border-left:3px solid var(--accent); }
+  .toast.error { border-left:3px solid var(--danger); }
+  .toast.info { border-left:3px solid var(--info); }
+
+  .modal-backdrop {
+    position:fixed; inset:0; z-index:100;
+    background:rgba(0,0,0,0.6); backdrop-filter:blur(4px);
+    display:none; align-items:center; justify-content:center;
+  }
+  .modal-backdrop.active { display:flex; }
+  .modal {
+    background:var(--bg-card); border:1px solid var(--border-light);
+    border-radius:14px; padding:24px; width:480px; max-width:90vw;
+    animation: modalIn 0.3s ease;
+  }
+  @keyframes modalIn { from { transform:scale(0.95); opacity:0; } to { transform:scale(1); opacity:1; } }
+  .modal h3 { font-size:16px; margin-bottom:16px; }
+  .modal label { display:block; font-size:12px; color:var(--fg-muted); margin-bottom:4px; margin-top:12px; }
+  .modal input, .modal select {
+    width:100%; padding:8px 12px; border-radius:8px;
+    background:var(--bg-primary); border:1px solid var(--border);
+    color:var(--fg); font-size:13px; outline:none;
+  }
+  .modal input:focus, .modal select:focus { border-color:var(--accent); }
+  .modal-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:20px; }
+
+  @media (max-width:1200px) {
+    .kpi-grid { grid-template-columns: repeat(3,1fr); }
+    .bottom-grid { grid-template-columns:1fr 1fr; }
+  }
+  @media (max-width:900px) {
+    .sidebar { transform:translateX(-100%); }
+    .sidebar.open { transform:translateX(0); }
+    .main-area { margin-left:0; }
+    .kpi-grid { grid-template-columns: repeat(2,1fr); }
+    .mid-grid { grid-template-columns:1fr; }
+    .bottom-grid { grid-template-columns:1fr; }
+    .mobile-toggle { display:flex!important; }
+  }
+  @media (max-width:600px) {
+    .kpi-grid { grid-template-columns:1fr; }
+    .topbar { flex-wrap:wrap; gap:10px; padding:12px 16px; }
+    .content { padding:16px; }
+    .date-range { display:none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration:0.01ms!important; transition-duration:0.01ms!important; }
+  }
+
+  .mobile-toggle { display:none!important; }
+</style>
 </head>
 <body>
 
-    <nav>
-        <div class="container nav-content">
-            <div class="logo"><i class="fa-solid fa-chart-pie" style="color: var(--primary); margin-right: 8px;"></i>Opinova</div>
-            <div>
-                <a href="#cta" class="btn btn-primary" style="padding: 10px 20px; font-size: 0.9rem;">Request Demo</a>
-            </div>
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loader-ring"></div>
+  <span style="font-size:13px;color:var(--fg-muted);">Loading dashboard data...</span>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<div class="modal-backdrop" id="filterModal">
+  <div class="modal" role="dialog" aria-label="Filter Settings">
+    <h3><i class="fa-solid fa-sliders" style="color:var(--accent);margin-right:8px;"></i>Filter Settings</h3>
+    <label for="filterStart">Start Date</label>
+    <input type="date" id="filterStart" value="2025-05-01">
+    <label for="filterEnd">End Date</label>
+    <input type="date" id="filterEnd" value="2025-05-31">
+    <label for="filterCategory">Category</label>
+    <select id="filterCategory">
+      <option value="all">All Categories</option>
+      <option value="safety">Safety</option>
+      <option value="infrastructure">Infrastructure</option>
+      <option value="academic">Academic</option>
+      <option value="services">Services</option>
+    </select>
+    <label for="filterSentiment">Sentiment</label>
+    <select id="filterSentiment">
+      <option value="all">All Sentiments</option>
+      <option value="positive">Positive</option>
+      <option value="neutral">Neutral</option>
+      <option value="negative">Negative</option>
+    </select>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeFilterModal()">Cancel</button>
+      <button class="btn btn-accent" onclick="applyFilter()">Apply Filter</button>
+    </div>
+  </div>
+</div>
+
+<div class="bg-glow"></div>
+<div class="bg-glow-2"></div>
+
+<aside class="sidebar" id="sidebar" role="navigation" aria-label="Main Navigation">
+  <div class="sidebar-logo">
+    <h2>Opinova</h2>
+    <span>AI-Powered Feedback Analytics</span>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">
+      <div class="nav-section-title">Main</div>
+      <div class="nav-item active" data-page="dashboard" tabindex="0" role="button">
+        <i class="fa-solid fa-grid-2"></i> Dashboard
+      </div>
+      <div class="nav-item" data-page="feedback" tabindex="0" role="button">
+        <i class="fa-solid fa-message-lines"></i> Feedback Overview
+        <span class="nav-badge" style="background:var(--accent-dim);color:var(--accent);">24</span>
+      </div>
+      <div class="nav-item" data-page="clusters" tabindex="0" role="button">
+        <i class="fa-solid fa-circle-nodes"></i> Cluster Analysis
+      </div>
+      <div class="nav-item" data-page="sentiment" tabindex="0" role="button">
+        <i class="fa-solid fa-face-smile"></i> Sentiment Trends
+      </div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Management</div>
+      <div class="nav-item" data-page="actions" tabindex="0" role="button">
+        <i class="fa-solid fa-bolt"></i> Action Items
+        <span class="nav-badge" style="background:var(--danger-dim);color:var(--danger);">4</span>
+      </div>
+      <div class="nav-item" data-page="reports" tabindex="0" role="button">
+        <i class="fa-solid fa-file-chart-column"></i> Reports
+      </div>
+      <div class="nav-item" data-page="settings" tabindex="0" role="button">
+        <i class="fa-solid fa-gear"></i> Settings
+      </div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">System</div>
+      <div class="nav-item" data-page="api" tabindex="0" role="button">
+        <i class="fa-solid fa-plug"></i> API Status
+        <span class="nav-badge" style="background:rgba(34,197,94,0.1);color:#22c55e;">Online</span>
+      </div>
+      <div class="nav-item" data-page="logs" tabindex="0" role="button">
+        <i class="fa-solid fa-clock-rotate-left"></i> Activity Logs
+      </div>
+    </div>
+  </nav>
+  <div style="padding:12px 16px;border-top:1px solid var(--border);font-size:11px;color:var(--fg-dim);">
+    <i class="fa-solid fa-circle" style="color:#22c55e;font-size:6px;margin-right:4px;"></i>
+    Connected to FastAPI Backend
+  </div>
+</aside>
+
+<main class="main-area">
+  <header class="topbar">
+    <div style="display:flex;align-items:center;gap:14px;">
+      <button class="mobile-toggle btn btn-outline" onclick="toggleSidebar()" aria-label="Toggle menu">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+      <div class="topbar-left">
+        <h1>Dashboard</h1>
+        <p id="dateRangeDisplay">May 1 – May 31, 2025</p>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="date-range">
+        <i class="fa-regular fa-calendar"></i>
+        <span id="dateRangeText">May 1 - May 31, 2025</span>
+      </div>
+      <button class="btn btn-outline" onclick="openFilterModal()" aria-label="Open filter settings">
+        <i class="fa-solid fa-filter"></i> Filter
+      </button>
+      <button class="btn btn-outline" onclick="document.getElementById('csvUploadInput').click()" aria-label="Upload CSV Dataset">
+        <i class="fa-solid fa-upload"></i> Upload CSV
+      </button>
+      <input type="file" id="csvUploadInput" accept=".csv" style="display: none;" onchange="uploadCSV(event)">
+      
+      <button class="btn btn-accent" onclick="exportReport()" aria-label="Export report">
+        <i class="fa-solid fa-download"></i> Export Report
+      </button>
+    </div>
+  </header>
+
+  <section class="content">
+    <div class="kpi-grid" id="kpiGrid">
+      </div>
+
+    <div class="mid-grid">
+      <div class="card">
+        <div class="card-header">
+          <h3><i class="fa-solid fa-brain" style="color:var(--accent);margin-right:8px;"></i>AI Priority Matrix</h3>
+          <span class="badge" style="background:var(--accent-dim);color:var(--accent);">Real-time</span>
         </div>
-    </nav>
-
-    <section id="hero">
-        <div class="hero-bg-glow"></div>
-        <div class="container">
-            <h1 class="reveal">Every Voice Matters.<br><span class="gradient-text">AI Finds What Matters Most.</span></h1>
-            <p class="reveal">Opinova transforms institutional feedback into intelligent priorities, explainable insights, and actionable decisions.</p>
-            
-            <div class="btn-group reveal">
-                <a href="#cta" class="btn btn-primary">Request Demo</a>
-                <a href="#features" class="btn btn-secondary">Try Opinova</a>
+        <div class="card-body">
+          <div class="matrix-container">
+            <div class="matrix-y-axis">
+              <span>High</span>
+              <span>Med</span>
+              <span>Low</span>
             </div>
-
-            <div class="glass dashboard-mini reveal">
-                <div class="stat-card">
-                    <h4>Critical Issues</h4>
-                    <div class="value text-danger">12 <i class="fa-solid fa-arrow-trend-up" style="font-size: 1rem;"></i></div>
-                </div>
-                <div class="stat-card">
-                    <h4>Feedback Analyzed</h4>
-                    <div class="value text-primary">10,000+</div>
-                </div>
-                <div class="stat-card">
-                    <h4>AI Insights Generated</h4>
-                    <div class="value text-success">250+</div>
-                </div>
+            <div class="matrix-plot" id="matrixPlot">
+              </div>
+            <div class="matrix-x-axis" style="grid-column:2;">
+              <span>Low Freq</span>
+              <span>Medium</span>
+              <span>High Freq</span>
             </div>
+          </div>
+          <div style="display:flex;gap:16px;margin-top:10px;justify-content:center;">
+            <span style="font-size:10.5px;color:var(--fg-dim);display:flex;align-items:center;gap:4px;">
+              <span style="width:8px;height:8px;border-radius:50%;background:var(--danger);"></span> Critical
+            </span>
+            <span style="font-size:10.5px;color:var(--fg-dim);display:flex;align-items:center;gap:4px;">
+              <span style="width:8px;height:8px;border-radius:50%;background:var(--warning);"></span> High
+            </span>
+            <span style="font-size:10.5px;color:var(--fg-dim);display:flex;align-items:center;gap:4px;">
+              <span style="width:8px;height:8px;border-radius:50%;background:var(--info);"></span> Medium
+            </span>
+            <span style="font-size:10.5px;color:var(--fg-dim);display:flex;align-items:center;gap:4px;">
+              <span style="width:8px;height:8px;border-radius:50%;background:var(--fg-dim);"></span> Low
+            </span>
+          </div>
         </div>
-    </section>
+      </div>
 
-    <section id="problem">
-        <div class="container">
-            <div class="section-header reveal">
-                <h2>Organizations hear thousands of voices, <br>but finding what matters is difficult.</h2>
-            </div>
-            
-            <div class="problem-grid reveal">
-                <div class="glass problem-item">
-                    <i class="fa-solid fa-circle-xmark"></i>
-                    <div><strong>Feedback overload</strong> paralyzes action</div>
-                </div>
-                <div class="glass problem-item">
-                    <i class="fa-solid fa-circle-xmark"></i>
-                    <div><strong>Important issues hidden</strong> among common complaints</div>
-                </div>
-                <div class="glass problem-item">
-                    <i class="fa-solid fa-circle-xmark"></i>
-                    <div><strong>Slow manual analysis</strong> delays response times</div>
-                </div>
-                <div class="glass problem-item">
-                    <i class="fa-solid fa-circle-xmark"></i>
-                    <div><strong>Decisions made without complete</strong> understanding</div>
-                </div>
-            </div>
-
-            <p class="solution-transition gradient-text reveal">Opinova turns noise into intelligence.</p>
+      <div class="card">
+        <div class="card-header">
+          <h3><i class="fa-solid fa-triangle-exclamation" style="color:var(--warning);margin-right:8px;"></i>Top Priority Issues</h3>
+          <span class="badge" style="background:var(--warning-dim);color:var(--warning);">8 Issues</span>
         </div>
-    </section>
+        <div class="card-body" id="issuesList" style="padding-top:8px;padding-bottom:8px;">
+          </div>
+      </div>
+    </div>
 
-    <section id="how-it-works">
-        <div class="container">
-            <div class="section-header reveal">
-                <h2>How Opinova Works</h2>
-                <p style="color: var(--text-muted); margin-top: 16px;">A seamless pipeline from raw data to targeted action.</p>
-            </div>
-            
-            <div class="step-container reveal">
-                <div class="glass step">
-                    <div class="step-icon"><i class="fa-solid fa-inbox"></i></div>
-                    <h3>1. Collect Opinions</h3>
-                    <p>Gather feedback from students, employees, customers, or communities seamlessly.</p>
-                </div>
-                
-                <div class="glass step">
-                    <div class="step-icon"><i class="fa-solid fa-brain"></i></div>
-                    <h3>2. AI Understanding</h3>
-                    <p>Advanced neural networks identify patterns, themes, and hidden concerns in real-time.</p>
-                </div>
-                
-                <div class="glass step">
-                    <div class="step-icon"><i class="fa-solid fa-layer-group"></i></div>
-                    <h3>3. Priority Intelligence</h3>
-                    <p>The system evaluates criticality, urgency, impact, and overall importance automatically.</p>
-                </div>
-                
-                <div class="glass step">
-                    <div class="step-icon"><i class="fa-solid fa-bolt"></i></div>
-                    <h3>4. Recommendations</h3>
-                    <p>Generate perfectly clear insights and actionable next steps for your team.</p>
-                </div>
-            </div>
+    <div class="bottom-grid">
+      <div class="card">
+        <div class="card-header">
+          <h3><i class="fa-solid fa-chart-pie" style="color:var(--purple);margin-right:8px;"></i>Sentiment Overview</h3>
         </div>
-    </section>
-
-    <section id="features">
-        <div class="container">
-            <div class="section-header reveal">
-                <h2>Platform Capabilities</h2>
+        <div class="card-body">
+          <div style="display:flex;align-items:center;gap:20px;">
+            <div class="sentiment-ring">
+              <canvas id="sentimentChart"></canvas>
+              <div class="sentiment-center">
+                <div class="val" id="sentimentMainVal">73%</div>
+                <div class="lbl">Positive</div>
+              </div>
             </div>
-            
-            <div class="features-grid">
-                <div class="glass feature-card reveal">
-                    <div class="feature-icon"><i class="fa-solid fa-microchip"></i></div>
-                    <h3>AI Feedback Intelligence</h3>
-                    <p>Understand the deeper meaning and emotion behind feedback, not just tallying keyword counts.</p>
-                </div>
-                <div class="glass feature-card reveal">
-                    <div class="feature-icon"><i class="fa-solid fa-sort-amount-down"></i></div>
-                    <h3>Smart Priority Ranking</h3>
-                    <p>Automatically bubble up critical issues that need absolute immediate attention from administration.</p>
-                </div>
-                <div class="glass feature-card reveal">
-                    <div class="feature-icon"><i class="fa-solid fa-magnifying-glass-chart"></i></div>
-                    <h3>Explainable AI</h3>
-                    <p>Total transparency. Always understand exactly why an issue received its specific priority score.</p>
-                </div>
-                <div class="glass feature-card reveal">
-                    <div class="feature-icon"><i class="fa-solid fa-display"></i></div>
-                    <h3>Decision Dashboard</h3>
-                    <p>Visualize massive datasets and important insights clearly in a highly intuitive interface.</p>
-                </div>
-                <div class="glass feature-card reveal">
-                    <div class="feature-icon"><i class="fa-solid fa-bullseye"></i></div>
-                    <h3>Impact-Based Analysis</h3>
-                    <p>Shift focus toward solving the specific issues that are affecting people the most severely.</p>
-                </div>
-                <div class="glass feature-card reveal">
-                    <div class="feature-icon"><i class="fa-solid fa-building-shield"></i></div>
-                    <h3>Enterprise Ready</h3>
-                    <p>Engineered from the ground up for secure, robust institutional decision-making and compliance.</p>
-                </div>
-            </div>
+            <div class="sentiment-legend" id="sentimentLegend">
+              </div>
+          </div>
+          <div class="trend-sparkline" style="margin-top:16px;">
+            <canvas id="sentimentTrend"></canvas>
+          </div>
         </div>
-    </section>
+      </div>
 
-    <section id="preview">
-        <div class="container">
-            <div class="section-header reveal">
-                <h2>The Decision Dashboard</h2>
-                <p style="color: var(--text-muted); margin-top: 16px;">Actionable intelligence at a glance.</p>
-            </div>
-            
-            <div class="glass preview-mockup reveal">
-                <div class="preview-header">
-                    <div class="dots">
-                        <div class="dot" style="background:#ef4444;"></div>
-                        <div class="dot" style="background:#f59e0b;"></div>
-                        <div class="dot" style="background:#10b981;"></div>
-                    </div>
-                    <span style="color: var(--text-muted); font-size: 0.8rem; margin-left: 10px;">Opinova App Environment</span>
-                </div>
-                <div class="preview-body">
-                    <h3 style="margin-bottom: 24px;">Active Intelligence Feed</h3>
-                    
-                    <div class="priority-alert">
-                        <div class="alert-header">
-                            <div>
-                                <span style="color: var(--danger); font-weight: 600; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px;">Immediate Action Required</span>
-                                <h2 style="margin-top: 4px;">Student Safety Concern</h2>
-                            </div>
-                            <div class="score-badge">Priority: 91/100</div>
-                        </div>
-                        <p>Multiple anonymous reports indicating poor lighting in the North Campus corridor during evening hours, leading to safety apprehensions among students.</p>
-                        
-                        <div class="ai-reasoning">
-                            <strong><i class="fa-solid fa-robot"></i> AI Assessment:</strong> High impact and criticality detected based on sentiment urgency and frequency spike over 48 hours.
-                        </div>
-                        
-                        <div style="margin-top: 20px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); padding: 16px; border-radius: 8px;">
-                            <strong><i class="fa-solid fa-check-circle" style="color: var(--success); margin-right: 8px;"></i>Recommended Action:</strong> Immediate review of North Campus lighting infrastructure and temporary deployment of campus security to the area.
-                        </div>
-                    </div>
-                </div>
-            </div>
+      <div class="card">
+        <div class="card-header">
+          <h3><i class="fa-solid fa-chart-line" style="color:var(--info);margin-right:8px;"></i>Feedback Trend</h3>
         </div>
-    </section>
-
-    <section id="use-cases">
-        <div class="container">
-            <div class="section-header reveal">
-                <h2>Built for Every Institution</h2>
-            </div>
-            
-            <div class="use-cases-grid">
-                <div class="glass use-case reveal">
-                    <i class="fa-solid fa-graduation-cap" style="font-size: 2.5rem; color: var(--primary);"></i>
-                    <h3>Education</h3>
-                    <ul>
-                        <li><i class="fa-solid fa-check"></i> Aggregate student feedback</li>
-                        <li><i class="fa-solid fa-check"></i> Prioritize campus improvements</li>
-                        <li><i class="fa-solid fa-check"></i> Proactive safety monitoring</li>
-                    </ul>
-                </div>
-                <div class="glass use-case reveal">
-                    <i class="fa-solid fa-briefcase" style="font-size: 2.5rem; color: var(--secondary);"></i>
-                    <h3>Organizations</h3>
-                    <ul>
-                        <li><i class="fa-solid fa-check"></i> Deep employee insights</li>
-                        <li><i class="fa-solid fa-check"></i> Workplace culture improvement</li>
-                        <li><i class="fa-solid fa-check"></i> Management effectiveness</li>
-                    </ul>
-                </div>
-                <div class="glass use-case reveal">
-                    <i class="fa-solid fa-users" style="font-size: 2.5rem; color: var(--success);"></i>
-                    <h3>Communities</h3>
-                    <ul>
-                        <li><i class="fa-solid fa-check"></i> Public opinion analysis</li>
-                        <li><i class="fa-solid fa-check"></i> Better, faster governance</li>
-                        <li><i class="fa-solid fa-check"></i> Resource allocation</li>
-                    </ul>
-                </div>
-            </div>
+        <div class="card-body">
+          <canvas id="trendChart" style="max-height:220px;"></canvas>
         </div>
-    </section>
+      </div>
 
-    <section id="vision">
-        <div class="container reveal">
-            <h2>From opinions to actions.</h2>
-            <p>Opinova creates a bridge between human voices and intelligent decisions, helping institutions understand what people truly need, when they need it most.</p>
+      <div class="card">
+        <div class="card-header">
+          <h3><i class="fa-solid fa-wand-magic-sparkles" style="color:var(--accent);margin-right:8px;"></i>AI Recommendations</h3>
+          <span class="badge" style="background:var(--purple-dim);color:var(--purple);">3 Suggestions</span>
         </div>
-    </section>
+        <div class="card-body" id="aiSuggestions">
+          </div>
+      </div>
+    </div>
+  </section>
+</main>
 
-    <section id="about">
-        <div class="container reveal">
-            <div class="glass about-card">
-                <div class="dev-by">Developed By</div>
-                <h3 style="font-size: 2rem; margin-bottom: 12px;">CarbonIt Labs</h3>
-                <div style="width: 60px; height: 3px; background: var(--primary); margin: 0 auto 24px;"></div>
-                <p style="color: var(--text-muted); margin-bottom: 24px;">Creator: <strong>Edwin Sam K Reju</strong></p>
-                <p>Student innovator building AI solutions for real-world problems.</p>
-            </div>
-        </div>
-    </section>
+<script>
+const USE_MOCK_DATA = false;
+const API_BASE_URL = 'http://localhost:8000/api/v1';
 
-    <section id="cta">
-        <div class="container reveal">
-            <h2>Ready to transform feedback into intelligence?</h2>
-            <div class="btn-group" style="margin-bottom: 0;">
-                <a href="#" class="btn btn-primary">Request Enterprise Demo</a>
-                <a href="#" class="btn btn-secondary">Try Opinova</a>
-            </div>
-        </div>
-    </section>
+let currentFilter = {
+  start_date: '2025-05-01',
+  end_date: '2025-05-31',
+  category: 'all',
+  sentiment: 'all'
+};
 
-    <footer>
-        <div class="container">
-            <h3 style="margin-bottom: 16px; font-size: 1.2rem;">Opinova</h3>
-            <p style="margin-bottom: 8px;">Developed by CarbonIt Labs</p>
-            <p style="margin-bottom: 24px;">Created by Edwin Sam K Reju</p>
-            
-            <div class="footer-links">
-                <a href="#">Privacy Policy</a>
-                <a href="#">Terms of Service</a>
-                <a href="#">Documentation</a>
-            </div>
-            
-            <p style="opacity: 0.5;">License: Apache License 2.0</p>
-        </div>
-    </footer>
+async function apiGet(endpoint, params = {}) {
+  try {
+    const query = new URLSearchParams(params).toString();
+    const url = `${API_BASE_URL}${endpoint}${query ? '?' + query : ''}`;
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    if (!res.ok) throw new Error(`Server Response Status Exception: ${res.status}`);
+    return await res.json();
+  } catch (error) {
+    showToast('Backend connection unavailable. Running offline fallback metrics.', 'error');
+    throw error;
+  }
+}
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const reveals = document.querySelectorAll('.reveal');
+async function apiPost(endpoint, params = {}, body = null) {
+  try {
+    const query = new URLSearchParams(params).toString();
+    const url = `${API_BASE_URL}${endpoint}${query ? '?' + query : ''}`;
+    
+    let options = { method: 'POST' };
+    if (body instanceof FormData) {
+      options.body = body;
+    } else {
+      options.headers = { 'Content-Type': 'application/json' };
+      if (body) options.body = JSON.stringify(body);
+    }
 
-            const revealOnScroll = () => {
-                const windowHeight = window.innerHeight;
-                const elementVisible = 100;
+    const res = await fetch(url, options);
+    if (!res.ok) throw new Error(`Execution error at network frame: ${res.status}`);
+    return await res.json();
+  } catch (error) {
+    showToast('Failed to commit tracking data package to core platform.', 'error');
+    throw error;
+  }
+}
 
-                reveals.forEach(reveal => {
-                    const elementTop = reveal.getBoundingClientRect().top;
-                    if (elementTop < windowHeight - elementVisible) {
-                        reveal.classList.add('active');
-                    }
-                });
-            };
+async function fetchKPI() { return apiGet('/dashboard/kpi', currentFilter); }
+async function fetchMatrix() { return apiGet('/dashboard/matrix', currentFilter); }
+async function fetchIssues() { return apiGet('/dashboard/issues', currentFilter); }
+async function fetchSentiment() { return apiGet('/dashboard/sentiment', currentFilter); }
+async function fetchSentimentTrend() { return apiGet('/dashboard/sentiment/trend', currentFilter); }
+async function fetchTrend() { return apiGet('/dashboard/trend', currentFilter); }
+async function fetchRecommendations() { return apiGet('/dashboard/recommendations', currentFilter); }
+async function triggerExport() { return apiPost('/dashboard/export', currentFilter); }
 
-            window.addEventListener('scroll', revealOnScroll);
-            revealOnScroll(); // Trigger immediately on load
-        });
-    </script>
+async function uploadCSV(event) {
+  const fileTarget = event.target.files[0];
+  if (!fileTarget) return;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'loading-overlay';
+  overlay.innerHTML = '<div class="loader-ring"></div><span style="font-size:13px;color:var(--fg-muted);">Parsing and building cluster embeddings...</span>';
+  document.body.appendChild(overlay);
+
+  const payload = new FormData();
+  payload.append('file', fileTarget);
+
+  try {
+    const response = await apiPost('/upload', {}, payload);
+    if (response && response.status === 'success') {
+      showToast('Records successfully synchronized. Refreshing datasets.', 'success');
+      await refreshDashboard();
+    }
+  } catch (err) {
+    showToast('Ingestion Error: Check data array layout consistency.', 'error');
+    console.error(err);
+  } finally {
+    overlay.remove();
+    event.target.value = '';
+  }
+}
+
+async function refreshDashboard() {
+  await loadDashboard();
+}
+
+function renderKPI(data) {
+  const grid = document.getElementById('kpiGrid');
+  const cards = [
+    {
+      icon: 'fa-solid fa-message',
+      iconBg: 'var(--accent-dim)', iconColor: 'var(--accent)',
+      label: 'Total Feedback Items', value: data.total_feedback.toLocaleString(),
+      change: `+${data.total_feedback_change}% vs Apr`,
+      changeDir: 'up', sub: 'vs Apr 1 – Apr 30'
+    },
+    {
+      icon: 'fa-solid fa-circle-nodes',
+      iconBg: 'var(--info-dim)', iconColor: 'var(--info)',
+      label: 'Identified Clusters', value: data.clusters,
+      change: `+${data.clusters_new} new clusters`,
+      changeDir: 'up', sub: 'AI-detected patterns'
+    },
+    {
+      icon: 'fa-solid fa-triangle-exclamation',
+      iconBg: 'var(--danger-dim)', iconColor: 'var(--danger)',
+      label: 'High Priority Issues', value: data.high_priority,
+      change: `+${data.high_priority_change} more than last month`,
+      changeDir: 'down', sub: 'Requires attention'
+    },
+    {
+      icon: 'fa-solid fa-bolt',
+      iconBg: 'var(--warning-dim)', iconColor: 'var(--warning)',
+      label: 'Immediate Actions', value: data.immediate_actions,
+      change: `+${data.immediate_actions_change} more than last month`,
+      changeDir: 'down', sub: 'Needs urgent response'
+    },
+    {
+      icon: 'fa-solid fa-check-double',
+      iconBg: 'var(--purple-dim)', iconColor: 'var(--purple)',
+      label: 'Resolution Rate', value: `${data.resolution_rate}%`,
+      change: `+${data.resolution_rate_change}% improvement`,
+      changeDir: 'up', sub: 'Issues resolved this period'
+    }
+  ];
+
+  grid.innerHTML = cards.map((c, i) => `
+    <div class="kpi-card" style="animation:fadeUp 0.4s ease ${i * 0.07}s both;">
+      <div class="kpi-icon" style="background:${c.iconBg};color:${c.iconColor};">
+        <i class="${c.icon}"></i>
+      </div>
+      <div class="kpi-label">${c.label}</div>
+      <div class="kpi-value">${c.value}</div>
+      <div class="kpi-change ${c.changeDir}">${c.changeDir === 'up' ? '<i class="fa-solid fa-arrow-up" style="font-size:9px;"></i>' : '<i class="fa-solid fa-arrow-down" style="font-size:9px;"></i>'}${c.change}</div>
+      <div class="kpi-sub">${c.sub}</div>
+    </div>
+  `).join('');
+
+  if (!document.getElementById('fadeUpStyle')) {
+    const s = document.createElement('style');
+    s.id = 'fadeUpStyle';
+    s.textContent = `@keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }`;
+    document.head.appendChild(s);
+  }
+}
+
+function renderMatrix(data) {
+  const plot = document.getElementById('matrixPlot');
+  const severityColors = { critical: 'var(--danger)', high: 'var(--warning)', medium: 'var(--info)', low: 'var(--fg-dim)' };
+  const severityGlow = { critical: 'rgba(239,68,68,0.4)', high: 'rgba(245,158,11,0.35)', medium: 'rgba(56,189,248,0.3)', low: 'rgba(90,106,128,0.2)' };
+
+  plot.innerHTML = data.map((d, i) => `
+    <div class="matrix-dot" style="left:${d.x * 100}%;top:${(1 - d.y) * 100}%;background:${severityColors[d.severity]};box-shadow:0 0 12px ${severityGlow[d.severity]};animation:fadeUp 0.5s ease ${0.3 + i * 0.05}s both;">
+      <div class="dot-tooltip">
+        <strong>${d.name}</strong><br>
+        Score: ${d.score} · ${d.severity.charAt(0).toUpperCase() + d.severity.slice(1)}
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderIssues(data) {
+  const list = document.getElementById('issuesList');
+  const rankColors = ['var(--danger)', 'var(--warning)', 'var(--warning)', 'var(--info)', 'var(--info)'];
+  const rankBgs = ['var(--danger-dim)', 'var(--warning-dim)', 'var(--warning-dim)', 'var(--info-dim)', 'var(--info-dim)'];
+
+  list.innerHTML = data.map((d, i) => {
+    const barColor = d.score >= 75 ? 'var(--danger)' : d.score >= 50 ? 'var(--warning)' : 'var(--info)';
+    return `
+    <div class="issue-item" style="animation:fadeUp 0.4s ease ${0.4 + i * 0.06}s both;">
+      <div class="issue-rank" style="background:${rankBgs[i] || 'rgba(255,255,255,0.05)'};color:${rankColors[i] || 'var(--fg-muted)'};">${d.rank}</div>
+      <div class="issue-info">
+        <div class="issue-name">${d.name}</div>
+        <div class="issue-meta">${d.category} · ${d.mentions} mentions</div>
+      </div>
+      <div class="issue-bar-bg">
+        <div class="issue-bar-fill" style="width:${d.score}%;background:${barColor};"></div>
+      </div>
+      <div class="issue-score" style="color:${barColor};">${d.score}</div>
+    </div>
+    `;
+  }).join('');
+}
+
+let sentimentChartInstance = null;
+function renderSentiment(data) {
+  const ctx = document.getElementById('sentimentChart').getContext('2d');
+  if (sentimentChartInstance) sentimentChartInstance.destroy();
+
+  const colors = ['#00d4aa', '#38bdf8', '#ef4444'];
+  const labels = ['Positive', 'Neutral', 'Negative'];
+  const values = [data.positive, data.neutral, data.negative];
+
+  sentimentChartInstance = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: labels,
+      datasets: [{ data: values, backgroundColor: colors, borderWidth: 0, spacing: 3 }]
+    },
+    options: {
+      cutout: '72%', responsive: true, maintainAspectRatio: true,
+      plugins: { legend: { display: false }, tooltip: { enabled: true } },
+      animation: { animateRotate: true, duration: 1200 }
+    }
+  });
+
+  const legend = document.getElementById('sentimentLegend');
+  legend.innerHTML = labels.map((l, i) => `
+    <div class="legend-item">
+      <span class="legend-dot" style="background:${colors[i]};"></span>
+      <span style="color:var(--fg-muted);">${l}</span>
+      <span class="legend-val">${values[i]}%</span>
+    </div>
+  `).join('');
+
+  document.getElementById('sentimentMainVal').textContent = data.positive + '%';
+}
+
+let sentimentTrendInstance = null;
+function renderSentimentTrend(data) {
+  const ctx = document.getElementById('sentimentTrend').getContext('2d');
+  if (sentimentTrendInstance) sentimentTrendInstance.destroy();
+
+  sentimentTrendInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: data.map((_, i) => `M${i + 1}`),
+      datasets: [{
+        data: data, borderColor: '#00d4aa', borderWidth: 1.5, fill: true,
+        backgroundColor: 'rgba(0,212,170,0.08)', pointRadius: 0, tension: 0.4
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { x: { display: false }, y: { display: false, min: Math.min(...data) - 5, max: Math.max(...data) + 5 } }
+    }
+  });
+}
+
+let trendChartInstance = null;
+function renderTrend(data) {
+  const ctx = document.getElementById('trendChart').getContext('2d');
+  if (trendChartInstance) trendChartInstance.destroy();
+
+  trendChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: data.labels,
+      datasets: [
+        { label: 'Positive', data: data.positive, backgroundColor: 'rgba(0,212,170,0.7)', borderRadius: 4 },
+        { label: 'Neutral', data: data.neutral, backgroundColor: 'rgba(56,189,248,0.6)', borderRadius: 4 },
+        { label: 'Negative', data: data.negative, backgroundColor: 'rgba(239,68,68,0.6)', borderRadius: 4 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top', align: 'end', labels: { color: '#8896ab', font: { size: 11, family: 'DM Sans' } } }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: '#5a6a80' } },
+        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#5a6a80' }, beginAtZero: true }
+      }
+    }
+  });
+}
+
+function renderRecommendations(data) {
+  const container = document.getElementById('aiSuggestions');
+  const priorityStyles = {
+    critical: { icon: 'fa-solid fa-fire', color: 'var(--danger)', bg: 'var(--danger-dim)' },
+    high: { icon: 'fa-solid fa-arrow-trend-up', color: 'var(--warning)', bg: 'var(--warning-dim)' },
+    medium: { icon: 'fa-solid fa-lightbulb', color: 'var(--info)', bg: 'var(--info-dim)' }
+  };
+
+  container.innerHTML = data.map((r, i) => {
+    const s = priorityStyles[r.priority] || priorityStyles.medium;
+    return `
+    <div class="ai-suggestion" style="animation:fadeUp 0.4s ease ${0.5 + i * 0.08}s both;">
+      <div class="ai-suggestion-header">
+        <div class="ai-icon" style="background:${s.bg};color:${s.color};"><i class="${s.icon}"></i></div>
+        <span>${r.title}</span>
+      </div>
+      <p>${r.text}</p>
+    </div>
+    `;
+  }).join('');
+}
+
+function showToast(message, type = 'info') {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  const icons = { success: 'fa-circle-check', error: 'fa-circle-xmark', info: 'fa-circle-info' };
+  const colors = { success: 'var(--accent)', error: 'var(--danger)', info: 'var(--info)' };
+  toast.innerHTML = `<i class="fa-solid ${icons[type]}" style="color:${colors[type]};font-size:16px;flex-shrink:0;"></i><span>${message}</span>`;
+  container.appendChild(toast);
+  setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateX(100%)'; toast.style.transition = 'all 0.3s'; }, 3500);
+  setTimeout(() => toast.remove(), 4000);
+}
+
+function openFilterModal() {
+  document.getElementById('filterModal').classList.add('active');
+}
+function closeFilterModal() {
+  document.getElementById('filterModal').classList.remove('active');
+}
+
+async function applyFilter() {
+  currentFilter.start_date = document.getElementById('filterStart').value;
+  currentFilter.end_date = document.getElementById('filterEnd').value;
+  currentFilter.category = document.getElementById('filterCategory').value;
+  currentFilter.sentiment = document.getElementById('filterSentiment').value;
+
+  const fmt = d => new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const rangeText = `${fmt(currentFilter.start_date)} - ${fmt(currentFilter.end_date)}, ${new Date(currentFilter.end_date + 'T00:00:00').getFullYear()}`;
+  document.getElementById('dateRangeDisplay').textContent = rangeText;
+  document.getElementById('dateRangeText').textContent = rangeText;
+
+  closeFilterModal();
+  showToast('Applying active analysis filter matrix...', 'info');
+  await loadDashboard();
+}
+
+async function exportReport() {
+  showToast('Assembling document output metadata...', 'info');
+  try {
+    const dataResponse = await triggerExport();
+    if (dataResponse && dataResponse.download_url) {
+      const anchorNode = document.createElement('a');
+      anchorNode.href = `${API_BASE_URL}${dataResponse.download_url}`;
+      anchorNode.download = 'Opinova_Analytics_Dataset.txt';
+      document.body.appendChild(anchorNode);
+      anchorNode.click();
+      anchorNode.remove();
+      showToast('Document transfer initialized successfully.', 'success');
+    }
+  } catch (err) {
+    showToast('Export Engine Execution Failure.', 'error');
+  }
+}
+
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', function() {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    this.classList.add('active');
+    if (window.innerWidth <= 900) {
+      document.getElementById('sidebar').classList.remove('open');
+    }
+  });
+});
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+async function loadDashboard() {
+  try {
+    const [kpi, matrix, issues, sentiment, sentTrend, trend, recs] = await Promise.all([
+      fetchKPI(), fetchMatrix(), fetchIssues(), fetchSentiment(), fetchSentimentTrend(), fetchTrend(), fetchRecommendations()
+    ]);
+
+    renderKPI(kpi);
+    renderMatrix(matrix);
+    renderIssues(issues);
+    renderSentiment(sentiment);
+    renderSentimentTrend(sentTrend);
+    renderTrend(trend);
+    renderRecommendations(recs);
+  } catch (err) {
+    console.error('Dashboard pipeline synchronization failure:', err);
+  }
+}
+
+window.addEventListener('DOMContentLoaded', async () => {
+  await loadDashboard();
+  const overlay = document.getElementById('loadingOverlay');
+  overlay.classList.add('hidden');
+  setTimeout(() => overlay.remove(), 600);
+});
+</script>
 </body>
 </html>

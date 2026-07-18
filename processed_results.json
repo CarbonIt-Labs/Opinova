@@ -1,0 +1,106 @@
+[
+    {
+        "topic": "Bullying Incidents",
+        "issue_type": "Safety Concern",
+        "criticality": 9,
+        "urgency": 9,
+        "impact": 9,
+        "users_affected_estimate": 50,
+        "confidence": 0.95,
+        "reasoning": "Both feedback items describe serious bullying incidents, one physical and one cyber, with a reported lack of action. This directly impacts student safety, mental well-being, and the overall school environment, requiring immediate and decisive intervention.",
+        "recommended_action": "Launch an immediate, thorough investigation into both reported bullying incidents. Implement and communicate clear anti-bullying measures and review existing reporting and response protocols to ensure effectiveness.",
+        "feedback_indices": [
+            0,
+            1
+        ],
+        "frequency": 2,
+        "original_texts": [
+            "A student was being repeatedly bullied in the cafeteria, and nothing was done despite reporting.",
+            "Another instance of cyberbullying on the school forum. This is getting out of hand!"
+        ],
+        "priority_score": 86,
+        "category": "Immediate Action Required"
+    },
+    {
+        "topic": "Bus Service Issues",
+        "issue_type": "Complaint",
+        "criticality": 7,
+        "urgency": 8,
+        "impact": 7,
+        "users_affected_estimate": 100,
+        "confidence": 0.9,
+        "reasoning": "Both items detail significant problems with school bus services: consistent delays affecting many students and a complete no-show for one bus. This impacts student attendance, punctuality, and can cause safety concerns for stranded students.",
+        "recommended_action": "Contact the bus service provider immediately to investigate consistent delays and the no-show incident for Bus 42. Implement a system for real-time tracking or communication for delays to inform students and parents.",
+        "feedback_indices": [
+            2,
+            3
+        ],
+        "frequency": 2,
+        "original_texts": [
+            "The morning buses are consistently 15-20 minutes late, causing students to miss homeroom.",
+            "Bus 42 never showed up yesterday."
+        ],
+        "priority_score": 72,
+        "category": "Strategic Improvements"
+    },
+    {
+        "topic": "Student Portal Crash",
+        "issue_type": "Technical Issue",
+        "criticality": 9,
+        "urgency": 9,
+        "impact": 9,
+        "users_affected_estimate": 1000,
+        "confidence": 0.98,
+        "reasoning": "The student portal crashing every time assignments are submitted is a critical technical issue that directly impedes academic progress for potentially all students. This can lead to missed deadlines, academic penalties, and significant frustration.",
+        "recommended_action": "Immediately escalate to IT support to diagnose and fix the student portal crashing issue, especially during assignment submission times. Communicate workaround solutions or extensions to students if the fix is not immediate.",
+        "feedback_indices": [
+            4
+        ],
+        "frequency": 1,
+        "original_texts": [
+            "The student portal website crashes every time we try to submit assignments."
+        ],
+        "priority_score": 84,
+        "category": "Immediate Action Required"
+    },
+    {
+        "topic": "Lunch Menu Options",
+        "issue_type": "Suggestion",
+        "criticality": 4,
+        "urgency": 4,
+        "impact": 5,
+        "users_affected_estimate": 50,
+        "confidence": 0.9,
+        "reasoning": "This is a clear request for more diverse dietary options, specifically vegetarian. While not a critical safety or operational issue, it impacts student satisfaction, inclusivity, and health for a segment of the student body.",
+        "recommended_action": "Forward the suggestion to the cafeteria management or food service provider for consideration in future menu planning and dietary option reviews.",
+        "feedback_indices": [
+            5
+        ],
+        "frequency": 1,
+        "original_texts": [
+            "Can we have more vegetarian options in the lunch menu?"
+        ],
+        "priority_score": 46,
+        "category": "Community Suggestions"
+    },
+    {
+        "topic": "Community Garden",
+        "issue_type": "Suggestion",
+        "criticality": 2,
+        "urgency": 2,
+        "impact": 3,
+        "users_affected_estimate": 10,
+        "confidence": 0.9,
+        "reasoning": "This is a positive suggestion for a school enhancement project. It's not a critical issue but could contribute to community engagement, environmental education, and school aesthetics, offering long-term benefits.",
+        "recommended_action": "Evaluate the feasibility and potential benefits of establishing a community garden. Consider forming a student/staff committee to research and plan the initiative.",
+        "feedback_indices": [
+            6
+        ],
+        "frequency": 1,
+        "original_texts": [
+            "I suggest adding a community garden to the school."
+        ],
+        "priority_score": 22,
+        "category": "Community Suggestions"
+    }
+]
