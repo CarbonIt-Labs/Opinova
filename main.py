@@ -140,7 +140,7 @@ def load_processed_results():
 
 class Api:
     def __init__(self):
-        self._window = None
+        self.window = None
         self.activities = []
         import datetime
         self.log_activity("Admin accessed Dashboard.")
@@ -301,9 +301,9 @@ class Api:
     # --- Dummy routes for UI buttons to prevent crashes ---
 
     def upload_csv(self):
-        if self._window:
+        if self.window:
             file_types = ('CSV files (*.csv)', 'All files (*.*)')
-            result = self._window.create_file_dialog(webview.OPEN_DIALOG, allow_multiple=False, file_types=file_types)
+            result = self.window.create_file_dialog(webview.OPEN_DIALOG, allow_multiple=False, file_types=file_types)
             if result and len(result) > 0:
                 filepath = result[0]
                 import pandas as pd
@@ -325,8 +325,8 @@ class Api:
         clusters = load_data()
         if not clusters:
              return {"status": "error", "message": "No data to export"}
-        if self._window:
-            result = self._window.create_file_dialog(webview.SAVE_DIALOG, allow_multiple=False, save_filename="Opinova_Report.csv")
+        if self.window:
+            result = self.window.create_file_dialog(webview.SAVE_DIALOG, allow_multiple=False, save_filename="Opinova_Report.csv")
             if result and len(result) > 0:
                 import pandas as pd
                 df = pd.DataFrame(clusters)
@@ -372,7 +372,7 @@ def main():
         api = Api()
         html_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "index.html")
         html_url = f"file:///{html_path.replace('//', '/')}"
-        api._window = webview.create_window("Opinova — Dashboard", url=html_url, js_api=api, width=1200, height=800)
+        api.window = webview.create_window("Opinova — Dashboard", url=html_url, js_api=api, width=1200, height=800)
         webview.start()
     else:
         parser.print_help()
