@@ -1,4 +1,5 @@
-pywebview
+fastapi
+uvicorn
 pandas
 google-genai
 python-dotenv

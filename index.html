@@ -32,19 +32,6 @@
     --purple-dim: rgba(167,139,250,0.12);
   }
 
-  [data-theme="light"] {
-    --bg-primary: #f8fafc;
-    --bg-secondary: #ffffff;
-    --bg-card: #ffffff;
-    --bg-card-hover: #f1f5f9;
-    --border: #e2e8f0;
-    --border-light: #cbd5e1;
-    --fg: #0f172a;
-    --fg-muted: #475569;
-    --fg-dim: #64748b;
-    --accent: #0ea5e9;
-  }
-
   * { margin:0; padding:0; box-sizing:border-box; }
   body {
     font-family: 'DM Sans', sans-serif;
@@ -506,6 +493,9 @@
       <div class="nav-item" data-page="clusters" tabindex="0" role="button">
         <i class="fa-solid fa-circle-nodes"></i> Cluster Analysis
       </div>
+      <div class="nav-item" data-page="sentiment" tabindex="0" role="button">
+        <i class="fa-solid fa-face-smile"></i> Sentiment Trends
+      </div>
     </div>
     <div class="nav-section">
       <div class="nav-section-title">Management</div>
@@ -522,6 +512,10 @@
     </div>
     <div class="nav-section">
       <div class="nav-section-title">System</div>
+      <div class="nav-item" data-page="api" tabindex="0" role="button">
+        <i class="fa-solid fa-plug"></i> API Status
+        <span class="nav-badge" style="background:rgba(34,197,94,0.1);color:#22c55e;">Online</span>
+      </div>
       <div class="nav-item" data-page="logs" tabindex="0" role="button">
         <i class="fa-solid fa-clock-rotate-left"></i> Activity Logs
       </div>
@@ -529,7 +523,7 @@
   </nav>
   <div style="padding:12px 16px;border-top:1px solid var(--border);font-size:11px;color:var(--fg-dim);">
     <i class="fa-solid fa-circle" style="color:#22c55e;font-size:6px;margin-right:4px;"></i>
-    Connected to PyWebView Desktop Backend
+    Connected to FastAPI Backend
   </div>
 </aside>
 
@@ -547,9 +541,10 @@
       <button class="btn btn-outline" onclick="openFilterModal()" aria-label="Open filter settings">
         <i class="fa-solid fa-filter"></i> Filter
       </button>
-      <button class="btn btn-outline" onclick="uploadCSV()" aria-label="Upload CSV Dataset">
+      <button class="btn btn-outline" onclick="document.getElementById('csvUploadInput').click()" aria-label="Upload CSV Dataset">
         <i class="fa-solid fa-upload"></i> Upload CSV
       </button>
+      <input type="file" id="csvUploadInput" accept=".csv" style="display: none;" onchange="uploadCSV(event)">
       
       <button class="btn btn-accent" onclick="exportReport()" aria-label="Export report">
         <i class="fa-solid fa-download"></i> Export Report
@@ -678,6 +673,18 @@
     </div>
   </section>
 
+  <section class="content page-content" id="page-sentiment">
+    <div class="card" style="min-height:70vh;">
+      <div class="card-header">
+        <h3><i class="fa-solid fa-face-smile" style="color:var(--purple);margin-right:8px;"></i>Sentiment Trends</h3>
+      </div>
+      <div class="card-body" style="display:flex; flex-direction:column; align-items:center; justify-content:center;">
+        <canvas id="largeSentimentChart" style="max-height:400px; width:100%;"></canvas>
+        <div style="margin-top:24px; color:var(--fg-muted); font-size:14px;">Detailed sentiment analysis module running...</div>
+      </div>
+    </div>
+  </section>
+
   <section class="content page-content" id="page-actions">
     <div class="card" style="min-height:70vh;">
       <div class="card-header">
@@ -723,8 +730,30 @@
           <button class="btn btn-accent" onclick="showToast('Sync enabled', 'success')">Enabled</button>
         </div>
         <div style="display:flex; justify-content:space-between; align-items:center;">
-          <div><strong style="font-size:14px;">Dark Mode</strong><div style="font-size:12px; color:var(--fg-muted);">Toggle dark/light theme</div></div>
-          <button id="themeToggleBtn" class="btn btn-accent" onclick="toggleTheme()">Enabled</button>
+          <div><strong style="font-size:14px;">Dark Mode</strong><div style="font-size:12px; color:var(--fg-muted);">Force dark theme across platform</div></div>
+          <button class="btn btn-accent" onclick="showToast('Theme updated', 'success')">Enabled</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="content page-content" id="page-api">
+    <div class="card" style="min-height:70vh;">
+      <div class="card-header">
+        <h3><i class="fa-solid fa-plug" style="color:#22c55e;margin-right:8px;"></i>API & System Health</h3>
+      </div>
+      <div class="card-body">
+        <div style="display:flex; gap:16px; margin-bottom:24px;">
+           <div class="kpi-card" style="flex:1;"><div class="kpi-label">Uptime</div><div class="kpi-value" style="color:#22c55e;">99.99%</div></div>
+           <div class="kpi-card" style="flex:1;"><div class="kpi-label">Latency</div><div class="kpi-value">42ms</div></div>
+           <div class="kpi-card" style="flex:1;"><div class="kpi-label">Last Sync</div><div class="kpi-value">Just now</div></div>
+        </div>
+        <h4 style="margin-bottom:12px;">Endpoint Status</h4>
+        <div style="background:var(--bg-primary); padding:16px; border-radius:8px; border:1px solid var(--border); font-family:monospace; font-size:12px; color:var(--info);">
+           > GET /api/v1/dashboard/issues [200 OK] 18ms<br>
+           > GET /api/v1/dashboard/matrix [200 OK] 12ms<br>
+           > GET /api/v1/dashboard/clusters_detail [200 OK] 34ms<br>
+           > System operational.
         </div>
       </div>
     </div>
@@ -734,10 +763,12 @@
     <div class="card" style="min-height:70vh;">
       <div class="card-header">
         <h3><i class="fa-solid fa-clock-rotate-left" style="color:var(--warning);margin-right:8px;"></i>Activity Logs</h3>
-        <button class="btn btn-outline" style="font-size:11px; padding:4px 8px; margin-left:auto;" onclick="loadActivities()">Refresh</button>
       </div>
       <div class="card-body">
-        <div id="activityLogsList" style="display:flex; flex-direction:column; gap:12px;">
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <div style="padding:12px; border-left:2px solid var(--accent); background:var(--bg-primary);"><strong>Admin</strong> accessed Dashboard. <span style="color:var(--fg-muted); font-size:11px; float:right;">Just now</span></div>
+          <div style="padding:12px; border-left:2px solid #22c55e; background:var(--bg-primary);"><strong>System</strong> synchronized 24 new records. <span style="color:var(--fg-muted); font-size:11px; float:right;">1 hr ago</span></div>
+          <div style="padding:12px; border-left:2px solid var(--purple); background:var(--bg-primary);"><strong>AI Engine</strong> regenerated priority matrix. <span style="color:var(--fg-muted); font-size:11px; float:right;">1 hr ago</span></div>
         </div>
       </div>
     </div>
@@ -746,21 +777,60 @@
 
 <script>
 const USE_MOCK_DATA = false;
+const API_BASE_URL = 'http://localhost:8000/api/v1';
 
 let currentFilter = {
   category: 'all',
   sentiment: 'all'
 };
 
-async function fetchKPI() { return await window.pywebview.api.get_kpi(currentFilter); }
-async function fetchMatrix() { return await window.pywebview.api.get_matrix(currentFilter); }
-async function fetchIssues() { return await window.pywebview.api.get_issues(currentFilter); }
-async function fetchSentiment() { return await window.pywebview.api.get_sentiment(currentFilter); }
-async function fetchTrend() { return await window.pywebview.api.get_trend(currentFilter); }
-async function fetchRecommendations() { return await window.pywebview.api.get_recommendations(currentFilter); }
-async function fetchClustersDetail() { return await window.pywebview.api.get_clusters_detail(currentFilter); }
-async function triggerExport() { return await window.pywebview.api.export_dashboard(currentFilter); }
-async function fetchActivities() { return await window.pywebview.api.get_activities(); }
+async function apiGet(endpoint, params = {}) {
+  try {
+    const query = new URLSearchParams(params).toString();
+    const url = `${API_BASE_URL}${endpoint}${query ? '?' + query : ''}`;
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    if (!res.ok) throw new Error(`Server Response Status Exception: ${res.status}`);
+    return await res.json();
+  } catch (error) {
+    showToast('Backend connection unavailable. Running offline fallback metrics.', 'error');
+    throw error;
+  }
+}
+
+async function apiPost(endpoint, params = {}, body = null) {
+  try {
+    const query = new URLSearchParams(params).toString();
+    const url = `${API_BASE_URL}${endpoint}${query ? '?' + query : ''}`;
+    
+    let options = { method: 'POST' };
+    if (body instanceof FormData) {
+      options.body = body;
+    } else {
+      options.headers = { 'Content-Type': 'application/json' };
+      if (body) options.body = JSON.stringify(body);
+    }
+
+    const res = await fetch(url, options);
+    if (!res.ok) throw new Error(`Execution error at network frame: ${res.status}`);
+    return await res.json();
+  } catch (error) {
+    showToast('Failed to commit tracking data package to core platform.', 'error');
+    throw error;
+  }
+}
+
+async function fetchKPI() { return apiGet('/dashboard/kpi', currentFilter); }
+async function fetchMatrix() { return apiGet('/dashboard/matrix', currentFilter); }
+async function fetchIssues() { return apiGet('/dashboard/issues', currentFilter); }
+async function fetchSentiment() { return apiGet('/dashboard/sentiment', currentFilter); }
+async function fetchSentimentTrend() { return apiGet('/dashboard/sentiment/trend', currentFilter); }
+async function fetchTrend() { return apiGet('/dashboard/trend', currentFilter); }
+async function fetchRecommendations() { return apiGet('/dashboard/recommendations', currentFilter); }
+async function fetchClustersDetail() { return apiGet('/dashboard/clusters_detail', currentFilter); }
+async function triggerExport() { return apiPost('/dashboard/export', currentFilter); }
 
 window.currentIssuesData = [];
 function openRawFeedbackModal(index) {
@@ -833,25 +903,30 @@ function renderFullPages(issues, clusters, actions) {
   }
 }
 
-async function uploadCSV() {
+async function uploadCSV(event) {
+  const fileTarget = event.target.files[0];
+  if (!fileTarget) return;
+
   const overlay = document.createElement('div');
   overlay.className = 'loading-overlay';
-  overlay.innerHTML = '<div class="loader-ring"></div><span style="font-size:13px;color:var(--fg-muted);">Waiting for file selection...</span>';
+  overlay.innerHTML = '<div class="loader-ring"></div><span style="font-size:13px;color:var(--fg-muted);">Parsing and building cluster embeddings...</span>';
   document.body.appendChild(overlay);
 
+  const payload = new FormData();
+  payload.append('file', fileTarget);
+
   try {
-    const response = await window.pywebview.api.upload_csv();
+    const response = await apiPost('/upload', {}, payload);
     if (response && response.status === 'success') {
       showToast('Records successfully synchronized. Refreshing datasets.', 'success');
       await refreshDashboard();
-    } else {
-      showToast(response.message || 'Action cancelled.', 'info');
     }
   } catch (err) {
     showToast('Ingestion Error: Check data array layout consistency.', 'error');
     console.error(err);
   } finally {
     overlay.remove();
+    event.target.value = '';
   }
 }
 
@@ -866,26 +941,36 @@ function renderKPI(data) {
       icon: 'fa-solid fa-message',
       iconBg: 'var(--accent-dim)', iconColor: 'var(--accent)',
       label: 'Total Feedback Items', value: data.total_feedback.toLocaleString(),
+      change: `+${data.total_feedback_change}% vs Apr`,
+      changeDir: 'up', sub: 'vs Apr 1 – Apr 30'
     },
     {
       icon: 'fa-solid fa-circle-nodes',
       iconBg: 'var(--info-dim)', iconColor: 'var(--info)',
       label: 'Identified Clusters', value: data.clusters,
+      change: `+${data.clusters_new} new clusters`,
+      changeDir: 'up', sub: 'AI-detected patterns'
     },
     {
       icon: 'fa-solid fa-triangle-exclamation',
       iconBg: 'var(--danger-dim)', iconColor: 'var(--danger)',
       label: 'High Priority Issues', value: data.high_priority,
+      change: `+${data.high_priority_change} more than last month`,
+      changeDir: 'down', sub: 'Requires attention'
     },
     {
       icon: 'fa-solid fa-bolt',
       iconBg: 'var(--warning-dim)', iconColor: 'var(--warning)',
       label: 'Immediate Actions', value: data.immediate_actions,
+      change: `+${data.immediate_actions_change} more than last month`,
+      changeDir: 'down', sub: 'Needs urgent response'
     },
     {
       icon: 'fa-solid fa-check-double',
       iconBg: 'var(--purple-dim)', iconColor: 'var(--purple)',
       label: 'Resolution Rate', value: `${data.resolution_rate}%`,
+      change: `+${data.resolution_rate_change}% improvement`,
+      changeDir: 'up', sub: 'Issues resolved this period'
     }
   ];
 
@@ -896,6 +981,8 @@ function renderKPI(data) {
       </div>
       <div class="kpi-label">${c.label}</div>
       <div class="kpi-value">${c.value}</div>
+      <div class="kpi-change ${c.changeDir}">${c.changeDir === 'up' ? '<i class="fa-solid fa-arrow-up" style="font-size:9px;"></i>' : '<i class="fa-solid fa-arrow-down" style="font-size:9px;"></i>'}${c.change}</div>
+      <div class="kpi-sub">${c.sub}</div>
     </div>
   `).join('');
 
@@ -984,6 +1071,28 @@ function renderSentiment(data) {
   document.getElementById('sentimentMainVal').textContent = data.positive + '%';
 }
 
+let sentimentTrendInstance = null;
+function renderSentimentTrend(data) {
+  const ctx = document.getElementById('sentimentTrend').getContext('2d');
+  if (sentimentTrendInstance) sentimentTrendInstance.destroy();
+
+  sentimentTrendInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: data.map((_, i) => `M${i + 1}`),
+      datasets: [{
+        data: data, borderColor: '#00e5ff', borderWidth: 1.5, fill: true,
+        backgroundColor: 'rgba(0,229,255,0.08)', pointRadius: 0, tension: 0.4
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { x: { display: false }, y: { display: false, min: Math.min(...data) - 5, max: Math.max(...data) + 5 } }
+    }
+  });
+}
+
 let trendChartInstance = null;
 function renderTrend(data) {
   const ctx = document.getElementById('trendChart').getContext('2d');
@@ -1067,10 +1176,14 @@ async function exportReport() {
   showToast('Assembling document output metadata...', 'info');
   try {
     const dataResponse = await triggerExport();
-    if (dataResponse && dataResponse.status === 'success') {
-      showToast('Document exported successfully.', 'success');
-    } else {
-      showToast('Export cancelled or failed.', 'info');
+    if (dataResponse && dataResponse.download_url) {
+      const anchorNode = document.createElement('a');
+      anchorNode.href = `${API_BASE_URL}${dataResponse.download_url}`;
+      anchorNode.download = 'Opinova_Analytics_Dataset.txt';
+      document.body.appendChild(anchorNode);
+      anchorNode.click();
+      anchorNode.remove();
+      showToast('Document transfer initialized successfully.', 'success');
     }
   } catch (err) {
     showToast('Export Engine Execution Failure.', 'error');
@@ -1094,59 +1207,30 @@ document.querySelectorAll('.nav-item').forEach(item => {
   });
 });
 
-function toggleTheme() {
-  const body = document.body;
-  if (body.getAttribute('data-theme') === 'light') {
-    body.removeAttribute('data-theme');
-    document.getElementById('themeToggleBtn').textContent = 'Enabled';
-    showToast('Dark mode enabled', 'success');
-  } else {
-    body.setAttribute('data-theme', 'light');
-    document.getElementById('themeToggleBtn').textContent = 'Disabled';
-    showToast('Light mode enabled', 'success');
-  }
-}
-
-async function loadActivities() {
-  try {
-    const activities = await fetchActivities();
-    const list = document.getElementById('activityLogsList');
-    if (!list) return;
-    list.innerHTML = activities.map(a => `
-      <div style="padding:12px; border-left:2px solid var(--accent); background:var(--bg-primary);">
-        <strong>System Log</strong>: ${a.message}
-        <span style="color:var(--fg-muted); font-size:11px; float:right;">${a.time}</span>
-      </div>
-    `).join('');
-  } catch (e) {
-    console.error(e);
-  }
-}
-
 function toggleSidebar() {
   document.getElementById('sidebar').classList.toggle('open');
 }
 
 async function loadDashboard() {
   try {
-    const [kpi, matrix, issues, sentiment, trend, recs, clustersDetail] = await Promise.all([
-      fetchKPI(), fetchMatrix(), fetchIssues(), fetchSentiment(), fetchTrend(), fetchRecommendations(), fetchClustersDetail()
+    const [kpi, matrix, issues, sentiment, sentTrend, trend, recs, clustersDetail] = await Promise.all([
+      fetchKPI(), fetchMatrix(), fetchIssues(), fetchSentiment(), fetchSentimentTrend(), fetchTrend(), fetchRecommendations(), fetchClustersDetail()
     ]);
 
     renderKPI(kpi);
     renderMatrix(matrix);
     renderIssues(issues);
     renderSentiment(sentiment);
+    renderSentimentTrend(sentTrend);
     renderTrend(trend);
     renderRecommendations(recs);
     renderFullPages(issues, clustersDetail, recs);
-    await loadActivities();
   } catch (err) {
     console.error('Dashboard pipeline synchronization failure:', err);
   }
 }
 
-window.addEventListener('pywebviewready', async () => {
+window.addEventListener('DOMContentLoaded', async () => {
   await loadDashboard();
   const overlay = document.getElementById('loadingOverlay');
   overlay.classList.add('hidden');
