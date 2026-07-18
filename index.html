@@ -19,9 +19,9 @@
     --fg: #e2e8f0;
     --fg-muted: #8896ab;
     --fg-dim: #5a6a80;
-    --accent: #00d4aa;
-    --accent-dim: rgba(0,212,170,0.12);
-    --accent-glow: rgba(0,212,170,0.25);
+    --accent: #00e5ff;
+    --accent-dim: rgba(0,229,255,0.12);
+    --accent-glow: rgba(0,229,255,0.25);
     --warning: #f59e0b;
     --warning-dim: rgba(245,158,11,0.12);
     --danger: #ef4444;
@@ -149,6 +149,8 @@
   .btn-accent:hover { background:#00eabb; box-shadow:0 0 20px var(--accent-glow); }
 
   .content { padding: 24px 28px; position:relative; z-index:1; }
+  .page-content { display: none; }
+  .page-content.active { display: block; }
 
   .kpi-grid {
     display: grid;
@@ -435,12 +437,9 @@
 <div class="modal-backdrop" id="filterModal">
   <div class="modal" role="dialog" aria-label="Filter Settings">
     <h3><i class="fa-solid fa-sliders" style="color:var(--accent);margin-right:8px;"></i>Filter Settings</h3>
-    <label for="filterStart">Start Date</label>
-    <input type="date" id="filterStart" value="2025-05-01">
-    <label for="filterEnd">End Date</label>
-    <input type="date" id="filterEnd" value="2025-05-31">
     <label for="filterCategory">Category</label>
     <select id="filterCategory">
+      <option value="" disabled selected>Select Category...</option>
       <option value="all">All Categories</option>
       <option value="safety">Safety</option>
       <option value="infrastructure">Infrastructure</option>
@@ -449,6 +448,7 @@
     </select>
     <label for="filterSentiment">Sentiment</label>
     <select id="filterSentiment">
+      <option value="" disabled selected>Select Sentiment...</option>
       <option value="all">All Sentiments</option>
       <option value="positive">Positive</option>
       <option value="neutral">Neutral</option>
@@ -457,6 +457,18 @@
     <div class="modal-actions">
       <button class="btn btn-outline" onclick="closeFilterModal()">Cancel</button>
       <button class="btn btn-accent" onclick="applyFilter()">Apply Filter</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="rawFeedbackModal">
+  <div class="modal" role="dialog" style="width:700px; max-width:95vw; max-height:85vh; display:flex; flex-direction:column;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <h3 style="margin:0;"><i class="fa-solid fa-comments" style="color:var(--accent);margin-right:8px;"></i>Raw Feedback Data</h3>
+      <button class="btn btn-outline" style="padding:4px 10px;" onclick="closeRawFeedbackModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div id="rawFeedbackTitle" style="font-weight:600; font-size:14px; margin-bottom:12px; color:var(--info);"></div>
+    <div id="rawFeedbackContent" style="flex:1; overflow-y:auto; padding-right:10px; display:flex; flex-direction:column; gap:10px;">
     </div>
   </div>
 </div>
@@ -477,7 +489,6 @@
       </div>
       <div class="nav-item" data-page="feedback" tabindex="0" role="button">
         <i class="fa-solid fa-message-lines"></i> Feedback Overview
-        <span class="nav-badge" style="background:var(--accent-dim);color:var(--accent);">24</span>
       </div>
       <div class="nav-item" data-page="clusters" tabindex="0" role="button">
         <i class="fa-solid fa-circle-nodes"></i> Cluster Analysis
@@ -524,14 +535,9 @@
       </button>
       <div class="topbar-left">
         <h1>Dashboard</h1>
-        <p id="dateRangeDisplay">May 1 – May 31, 2025</p>
       </div>
     </div>
     <div class="topbar-right">
-      <div class="date-range">
-        <i class="fa-regular fa-calendar"></i>
-        <span id="dateRangeText">May 1 - May 31, 2025</span>
-      </div>
       <button class="btn btn-outline" onclick="openFilterModal()" aria-label="Open filter settings">
         <i class="fa-solid fa-filter"></i> Filter
       </button>
@@ -546,7 +552,7 @@
     </div>
   </header>
 
-  <section class="content">
+  <section class="content page-content active" id="page-dashboard">
     <div class="kpi-grid" id="kpiGrid">
       </div>
 
@@ -640,6 +646,133 @@
       </div>
     </div>
   </section>
+
+  <section class="content page-content" id="page-feedback">
+    <div class="card" style="min-height:70vh;">
+      <div class="card-header">
+        <h3><i class="fa-solid fa-message-lines" style="color:var(--accent);margin-right:8px;"></i>Feedback Overview</h3>
+      </div>
+      <div class="card-body" style="padding:0;">
+        <div style="padding:16px; border-bottom:1px solid var(--border); display:flex; gap:10px;">
+           <input type="text" placeholder="Search raw feedback..." style="flex:1; padding:10px; background:var(--bg-primary); border:1px solid var(--border); border-radius:8px; color:var(--fg); font-size:13px;" />
+           <button class="btn btn-outline"><i class="fa-solid fa-filter"></i> Filters</button>
+        </div>
+        <div id="fullFeedbackList" style="padding:16px; display:flex; flex-direction:column; gap:12px;"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="content page-content" id="page-clusters">
+    <div class="card" style="min-height:70vh;">
+      <div class="card-header">
+        <h3><i class="fa-solid fa-circle-nodes" style="color:var(--info);margin-right:8px;"></i>Cluster Analysis</h3>
+      </div>
+      <div class="card-body">
+        <div id="fullClustersGrid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:16px;"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="content page-content" id="page-sentiment">
+    <div class="card" style="min-height:70vh;">
+      <div class="card-header">
+        <h3><i class="fa-solid fa-face-smile" style="color:var(--purple);margin-right:8px;"></i>Sentiment Trends</h3>
+      </div>
+      <div class="card-body" style="display:flex; flex-direction:column; align-items:center; justify-content:center;">
+        <canvas id="largeSentimentChart" style="max-height:400px; width:100%;"></canvas>
+        <div style="margin-top:24px; color:var(--fg-muted); font-size:14px;">Detailed sentiment analysis module running...</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="content page-content" id="page-actions">
+    <div class="card" style="min-height:70vh;">
+      <div class="card-header">
+        <h3><i class="fa-solid fa-bolt" style="color:var(--danger);margin-right:8px;"></i>Action Items</h3>
+      </div>
+      <div class="card-body" style="padding:0;">
+        <div id="fullActionsList" style="padding:16px; display:flex; flex-direction:column; gap:12px;"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="content page-content" id="page-reports">
+    <div class="card" style="min-height:70vh;">
+      <div class="card-header">
+        <h3><i class="fa-solid fa-file-chart-column" style="color:var(--info);margin-right:8px;"></i>Reports Studio</h3>
+      </div>
+      <div class="card-body" style="display:flex; gap:32px;">
+         <div style="flex:1;">
+           <h4 style="margin-bottom:16px;">Generate New Report</h4>
+           <button class="btn btn-accent" style="width:100%; justify-content:center; padding:12px; margin-bottom:12px;" onclick="exportReport()"><i class="fa-solid fa-file-pdf"></i> Comprehensive PDF Report</button>
+           <button class="btn btn-outline" style="width:100%; justify-content:center; padding:12px;"><i class="fa-solid fa-file-csv"></i> Raw Data Export (CSV)</button>
+         </div>
+         <div style="flex:2; border-left:1px solid var(--border); padding-left:32px;">
+           <h4 style="margin-bottom:16px;">Recent Exports</h4>
+           <div style="color:var(--fg-muted); font-size:13px;">No recent exports found in this session.</div>
+         </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="content page-content" id="page-settings">
+    <div class="card" style="min-height:70vh;">
+      <div class="card-header">
+        <h3><i class="fa-solid fa-gear" style="color:var(--fg-muted);margin-right:8px;"></i>Platform Settings</h3>
+      </div>
+      <div class="card-body" style="display:flex; flex-direction:column; gap:20px; max-width:500px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div><strong style="font-size:14px;">Email Notifications</strong><div style="font-size:12px; color:var(--fg-muted);">Receive alerts for critical issues</div></div>
+          <button class="btn btn-outline" onclick="showToast('Settings saved', 'success')">Toggle</button>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div><strong style="font-size:14px;">Auto-Sync Database</strong><div style="font-size:12px; color:var(--fg-muted);">Run pipeline hourly</div></div>
+          <button class="btn btn-accent" onclick="showToast('Sync enabled', 'success')">Enabled</button>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div><strong style="font-size:14px;">Dark Mode</strong><div style="font-size:12px; color:var(--fg-muted);">Force dark theme across platform</div></div>
+          <button class="btn btn-accent" onclick="showToast('Theme updated', 'success')">Enabled</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="content page-content" id="page-api">
+    <div class="card" style="min-height:70vh;">
+      <div class="card-header">
+        <h3><i class="fa-solid fa-plug" style="color:#22c55e;margin-right:8px;"></i>API & System Health</h3>
+      </div>
+      <div class="card-body">
+        <div style="display:flex; gap:16px; margin-bottom:24px;">
+           <div class="kpi-card" style="flex:1;"><div class="kpi-label">Uptime</div><div class="kpi-value" style="color:#22c55e;">99.99%</div></div>
+           <div class="kpi-card" style="flex:1;"><div class="kpi-label">Latency</div><div class="kpi-value">42ms</div></div>
+           <div class="kpi-card" style="flex:1;"><div class="kpi-label">Last Sync</div><div class="kpi-value">Just now</div></div>
+        </div>
+        <h4 style="margin-bottom:12px;">Endpoint Status</h4>
+        <div style="background:var(--bg-primary); padding:16px; border-radius:8px; border:1px solid var(--border); font-family:monospace; font-size:12px; color:var(--info);">
+           > GET /api/v1/dashboard/issues [200 OK] 18ms<br>
+           > GET /api/v1/dashboard/matrix [200 OK] 12ms<br>
+           > GET /api/v1/dashboard/clusters_detail [200 OK] 34ms<br>
+           > System operational.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="content page-content" id="page-logs">
+    <div class="card" style="min-height:70vh;">
+      <div class="card-header">
+        <h3><i class="fa-solid fa-clock-rotate-left" style="color:var(--warning);margin-right:8px;"></i>Activity Logs</h3>
+      </div>
+      <div class="card-body">
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <div style="padding:12px; border-left:2px solid var(--accent); background:var(--bg-primary);"><strong>Admin</strong> accessed Dashboard. <span style="color:var(--fg-muted); font-size:11px; float:right;">Just now</span></div>
+          <div style="padding:12px; border-left:2px solid #22c55e; background:var(--bg-primary);"><strong>System</strong> synchronized 24 new records. <span style="color:var(--fg-muted); font-size:11px; float:right;">1 hr ago</span></div>
+          <div style="padding:12px; border-left:2px solid var(--purple); background:var(--bg-primary);"><strong>AI Engine</strong> regenerated priority matrix. <span style="color:var(--fg-muted); font-size:11px; float:right;">1 hr ago</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
 </main>
 
 <script>
@@ -647,8 +780,6 @@ const USE_MOCK_DATA = false;
 const API_BASE_URL = 'http://localhost:8000/api/v1';
 
 let currentFilter = {
-  start_date: '2025-05-01',
-  end_date: '2025-05-31',
   category: 'all',
   sentiment: 'all'
 };
@@ -698,7 +829,79 @@ async function fetchSentiment() { return apiGet('/dashboard/sentiment', currentF
 async function fetchSentimentTrend() { return apiGet('/dashboard/sentiment/trend', currentFilter); }
 async function fetchTrend() { return apiGet('/dashboard/trend', currentFilter); }
 async function fetchRecommendations() { return apiGet('/dashboard/recommendations', currentFilter); }
+async function fetchClustersDetail() { return apiGet('/dashboard/clusters_detail', currentFilter); }
 async function triggerExport() { return apiPost('/dashboard/export', currentFilter); }
+
+window.currentIssuesData = [];
+function openRawFeedbackModal(index) {
+  const issue = window.currentIssuesData[index];
+  if (!issue) return;
+  document.getElementById('rawFeedbackTitle').innerText = issue.name;
+  const container = document.getElementById('rawFeedbackContent');
+  
+  if (issue.original_texts && issue.original_texts.length > 0) {
+    container.innerHTML = issue.original_texts.map((text, idx) => `
+      <div style="background:var(--bg-primary); padding:12px; border-radius:8px; border-left:3px solid var(--accent); font-size:13px; line-height:1.5;">
+        ${text}
+      </div>
+    `).join('');
+  } else {
+    container.innerHTML = `<div style="color:var(--fg-muted); font-size:13px; text-align:center; padding:20px;">No raw data available for this issue.</div>`;
+  }
+  
+  document.getElementById('rawFeedbackModal').classList.add('active');
+}
+function closeRawFeedbackModal() {
+  document.getElementById('rawFeedbackModal').classList.remove('active');
+}
+
+function renderFullPages(issues, clusters, actions) {
+  const fbList = document.getElementById('fullFeedbackList');
+  if (fbList) {
+    let allFeedbacks = [];
+    issues.forEach(i => {
+      if(i.original_texts) i.original_texts.forEach(t => allFeedbacks.push({text: t, issue: i.name, score: i.score}));
+    });
+    fbList.innerHTML = allFeedbacks.map(f => `
+      <div style="background:var(--bg-primary); padding:16px; border-radius:8px; border:1px solid var(--border);">
+        <div style="font-size:13px; line-height:1.5; margin-bottom:8px;">"${f.text}"</div>
+        <div style="font-size:11px; color:var(--fg-muted);">Tagged under: <span style="color:var(--accent);">${f.issue}</span> (Priority: ${f.score})</div>
+      </div>
+    `).join('');
+  }
+
+  const cGrid = document.getElementById('fullClustersGrid');
+  if (cGrid && clusters) {
+    cGrid.innerHTML = clusters.map(c => {
+      const score = c.priority_score || 0;
+      const color = score >= 75 ? 'var(--danger)' : score >= 50 ? 'var(--warning)' : 'var(--info)';
+      return `
+      <div style="background:var(--bg-primary); padding:16px; border-radius:12px; border:1px solid var(--border); display:flex; flex-direction:column; gap:10px;">
+        <h4 style="font-size:15px; font-weight:600; color:${color}; margin:0;">${c.topic || 'Unknown'}</h4>
+        <div style="font-size:12px; color:var(--fg-muted); line-height:1.5;">${c.reasoning || 'No specific reasoning provided.'}</div>
+        <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--fg-dim); margin-top:auto; padding-top:10px; border-top:1px solid var(--border);">
+           <span>Score: <strong style="color:${color}">${score}</strong></span>
+           <span>Mentions: <strong>${c.frequency || 1}</strong></span>
+        </div>
+      </div>
+      `;
+    }).join('');
+  }
+
+  const aList = document.getElementById('fullActionsList');
+  if (aList && actions) {
+    aList.innerHTML = actions.map(a => `
+      <div style="background:var(--bg-primary); padding:16px; border-radius:8px; border-left:4px solid ${a.priority === 'critical' ? 'var(--danger)' : a.priority === 'high' ? 'var(--warning)' : 'var(--info)'}; display:flex; align-items:center; gap:16px;">
+        <input type="checkbox" style="width:18px; height:18px; cursor:pointer;" />
+        <div style="flex:1;">
+           <div style="font-size:14px; font-weight:600;">${a.title}</div>
+           <div style="font-size:12px; color:var(--fg-muted); margin-top:4px;">${a.text}</div>
+        </div>
+        <button class="btn btn-outline" style="font-size:11px; padding:6px 12px;">Delegate</button>
+      </div>
+    `).join('');
+  }
+}
 
 async function uploadCSV(event) {
   const fileTarget = event.target.files[0];
@@ -796,17 +999,22 @@ function renderMatrix(data) {
   const severityColors = { critical: 'var(--danger)', high: 'var(--warning)', medium: 'var(--info)', low: 'var(--fg-dim)' };
   const severityGlow = { critical: 'rgba(239,68,68,0.4)', high: 'rgba(245,158,11,0.35)', medium: 'rgba(56,189,248,0.3)', low: 'rgba(90,106,128,0.2)' };
 
-  plot.innerHTML = data.map((d, i) => `
-    <div class="matrix-dot" style="left:${d.x * 100}%;top:${(1 - d.y) * 100}%;background:${severityColors[d.severity]};box-shadow:0 0 12px ${severityGlow[d.severity]};animation:fadeUp 0.5s ease ${0.3 + i * 0.05}s both;">
+  plot.innerHTML = data.map((d, i) => {
+    const xPos = Math.max(5, Math.min(95, d.x * 100));
+    const yPos = Math.max(5, Math.min(95, (1 - d.y) * 100));
+    return `
+    <div class="matrix-dot" style="left:${xPos}%;top:${yPos}%;background:${severityColors[d.severity]};box-shadow:0 0 12px ${severityGlow[d.severity]};animation:fadeUp 0.5s ease ${0.3 + i * 0.05}s both;">
       <div class="dot-tooltip">
         <strong>${d.name}</strong><br>
         Score: ${d.score} · ${d.severity.charAt(0).toUpperCase() + d.severity.slice(1)}
       </div>
     </div>
-  `).join('');
+    `;
+  }).join('');
 }
 
 function renderIssues(data) {
+  window.currentIssuesData = data;
   const list = document.getElementById('issuesList');
   const rankColors = ['var(--danger)', 'var(--warning)', 'var(--warning)', 'var(--info)', 'var(--info)'];
   const rankBgs = ['var(--danger-dim)', 'var(--warning-dim)', 'var(--warning-dim)', 'var(--info-dim)', 'var(--info-dim)'];
@@ -814,11 +1022,11 @@ function renderIssues(data) {
   list.innerHTML = data.map((d, i) => {
     const barColor = d.score >= 75 ? 'var(--danger)' : d.score >= 50 ? 'var(--warning)' : 'var(--info)';
     return `
-    <div class="issue-item" style="animation:fadeUp 0.4s ease ${0.4 + i * 0.06}s both;">
+    <div class="issue-item" style="cursor:pointer; animation:fadeUp 0.4s ease ${0.4 + i * 0.06}s both;" onclick="openRawFeedbackModal(${i})" title="Click to view raw feedback">
       <div class="issue-rank" style="background:${rankBgs[i] || 'rgba(255,255,255,0.05)'};color:${rankColors[i] || 'var(--fg-muted)'};">${d.rank}</div>
       <div class="issue-info">
         <div class="issue-name">${d.name}</div>
-        <div class="issue-meta">${d.category} · ${d.mentions} mentions</div>
+        <div class="issue-meta">${d.category} · ${d.mentions} mentions${d.source_ids && d.source_ids.length ? ' · Source IDs: ' + d.source_ids.map(id => '#' + id).join(', ') : ''}</div>
       </div>
       <div class="issue-bar-bg">
         <div class="issue-bar-fill" style="width:${d.score}%;background:${barColor};"></div>
@@ -834,7 +1042,7 @@ function renderSentiment(data) {
   const ctx = document.getElementById('sentimentChart').getContext('2d');
   if (sentimentChartInstance) sentimentChartInstance.destroy();
 
-  const colors = ['#00d4aa', '#38bdf8', '#ef4444'];
+  const colors = ['#00e5ff', '#38bdf8', '#ef4444'];
   const labels = ['Positive', 'Neutral', 'Negative'];
   const values = [data.positive, data.neutral, data.negative];
 
@@ -873,8 +1081,8 @@ function renderSentimentTrend(data) {
     data: {
       labels: data.map((_, i) => `M${i + 1}`),
       datasets: [{
-        data: data, borderColor: '#00d4aa', borderWidth: 1.5, fill: true,
-        backgroundColor: 'rgba(0,212,170,0.08)', pointRadius: 0, tension: 0.4
+        data: data, borderColor: '#00e5ff', borderWidth: 1.5, fill: true,
+        backgroundColor: 'rgba(0,229,255,0.08)', pointRadius: 0, tension: 0.4
       }]
     },
     options: {
@@ -895,7 +1103,7 @@ function renderTrend(data) {
     data: {
       labels: data.labels,
       datasets: [
-        { label: 'Positive', data: data.positive, backgroundColor: 'rgba(0,212,170,0.7)', borderRadius: 4 },
+        { label: 'Positive', data: data.positive, backgroundColor: 'rgba(0,229,255,0.7)', borderRadius: 4 },
         { label: 'Neutral', data: data.neutral, backgroundColor: 'rgba(56,189,248,0.6)', borderRadius: 4 },
         { label: 'Negative', data: data.negative, backgroundColor: 'rgba(239,68,68,0.6)', borderRadius: 4 }
       ]
@@ -930,6 +1138,7 @@ function renderRecommendations(data) {
         <span>${r.title}</span>
       </div>
       <p>${r.text}</p>
+      ${r.source_ids && r.source_ids.length ? `<div style="font-size:10.5px;color:var(--fg-dim);margin-top:8px;">Source Submissions: ${r.source_ids.map(id => '#' + id).join(', ')}</div>` : ''}
     </div>
     `;
   }).join('');
@@ -955,15 +1164,8 @@ function closeFilterModal() {
 }
 
 async function applyFilter() {
-  currentFilter.start_date = document.getElementById('filterStart').value;
-  currentFilter.end_date = document.getElementById('filterEnd').value;
   currentFilter.category = document.getElementById('filterCategory').value;
   currentFilter.sentiment = document.getElementById('filterSentiment').value;
-
-  const fmt = d => new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  const rangeText = `${fmt(currentFilter.start_date)} - ${fmt(currentFilter.end_date)}, ${new Date(currentFilter.end_date + 'T00:00:00').getFullYear()}`;
-  document.getElementById('dateRangeDisplay').textContent = rangeText;
-  document.getElementById('dateRangeText').textContent = rangeText;
 
   closeFilterModal();
   showToast('Applying active analysis filter matrix...', 'info');
@@ -992,6 +1194,13 @@ document.querySelectorAll('.nav-item').forEach(item => {
   item.addEventListener('click', function() {
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     this.classList.add('active');
+    
+    // Page switching logic
+    const pageId = 'page-' + this.getAttribute('data-page');
+    document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
+    const targetPage = document.getElementById(pageId);
+    if (targetPage) targetPage.classList.add('active');
+    
     if (window.innerWidth <= 900) {
       document.getElementById('sidebar').classList.remove('open');
     }
@@ -1004,8 +1213,8 @@ function toggleSidebar() {
 
 async function loadDashboard() {
   try {
-    const [kpi, matrix, issues, sentiment, sentTrend, trend, recs] = await Promise.all([
-      fetchKPI(), fetchMatrix(), fetchIssues(), fetchSentiment(), fetchSentimentTrend(), fetchTrend(), fetchRecommendations()
+    const [kpi, matrix, issues, sentiment, sentTrend, trend, recs, clustersDetail] = await Promise.all([
+      fetchKPI(), fetchMatrix(), fetchIssues(), fetchSentiment(), fetchSentimentTrend(), fetchTrend(), fetchRecommendations(), fetchClustersDetail()
     ]);
 
     renderKPI(kpi);
@@ -1015,6 +1224,7 @@ async function loadDashboard() {
     renderSentimentTrend(sentTrend);
     renderTrend(trend);
     renderRecommendations(recs);
+    renderFullPages(issues, clustersDetail, recs);
   } catch (err) {
     console.error('Dashboard pipeline synchronization failure:', err);
   }
