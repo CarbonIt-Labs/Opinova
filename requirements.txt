@@ -1,0 +1,6 @@
+pywebview
+pandas
+google-genai
+python-dotenv
+pydantic
+streamlit
