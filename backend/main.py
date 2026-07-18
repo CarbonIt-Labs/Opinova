@@ -17,12 +17,17 @@ from reports import print_top_issues, print_summary, export_report
 from config import BATCH_SIZE
 from database import (
     init_db, authenticate, save_clusters, load_clusters,
-    update_cluster_status, add_file, get_files, get_file_by_id, update_file_status
+    update_cluster_status, add_file, get_files, get_file_by_id, update_file_status,
+    get_default_user, update_default_user, delete_file as delete_db_file
 )
 
-load_dotenv()
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+ENV_FILE = os.path.join(ROOT_DIR, ".env")
+DATA_ROOT = os.path.join(ROOT_DIR, "data")
+DATA_DIR = os.path.join(DATA_ROOT, "uploads")
+LOG_FILE = os.path.join(DATA_ROOT, "activity.log")
 
-DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "uploads")
+load_dotenv(ENV_FILE)
 
 def run_analysis(filepath: str, file_id: str, api_ref=None):
     try:
@@ -114,10 +119,17 @@ class Api:
 
     def log_activity(self, message):
         import datetime
-        self.activities.append({
+        entry = {
             "message": message,
             "time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        })
+        }
+        self.activities.append(entry)
+        try:
+            os.makedirs(os.path.dirname(LOG_FILE), exist_ok=True)
+            with open(LOG_FILE, "a", encoding="utf-8") as log_file:
+                log_file.write(json.dumps(entry) + "\n")
+        except Exception as e:
+            print(f"Log write error: {e}")
 
     def login(self, username, password):
         try:
@@ -135,7 +147,90 @@ class Api:
             return False
 
     def get_activities(self):
-        return self.activities[::-1][:50]
+        try:
+            entries = []
+            if os.path.exists(LOG_FILE):
+                with open(LOG_FILE, "r", encoding="utf-8") as log_file:
+                    for line in log_file:
+                        line = line.strip()
+                        if not line:
+                            continue
+                        try:
+                            entries.append(json.loads(line))
+                        except Exception:
+                            entries.append({"message": line, "time": ""})
+            return entries[::-1][:100]
+        except Exception as e:
+            print(f"Log read error: {e}")
+            return self.activities[::-1][:50]
+
+    def clear_activities(self):
+        try:
+            os.makedirs(os.path.dirname(LOG_FILE), exist_ok=True)
+            with open(LOG_FILE, "w", encoding="utf-8"):
+                pass
+            self.activities = []
+            self.log_activity("Activity logs cleared.")
+            return {"status": "success"}
+        except Exception as e:
+            print(f"Log clear error: {e}")
+            return {"status": "error", "message": str(e)}
+
+    def log_custom_activity(self, message):
+        self.log_activity(message)
+        return True
+
+    def get_settings(self):
+        try:
+            load_dotenv(ENV_FILE, override=True)
+            user = get_default_user()
+            return {
+                "api_key": os.getenv("GEMINI_API_KEY", ""),
+                "username": user.get("username", "admin")
+            }
+        except Exception as e:
+            print(f"Settings read error: {e}")
+            return {"api_key": "", "username": "admin"}
+
+    def save_settings(self, settings):
+        try:
+            api_key = (settings or {}).get("api_key", "").strip()
+            username = (settings or {}).get("username", "").strip()
+            password = (settings or {}).get("password", "").strip()
+
+            if api_key:
+                self._set_env_value("GEMINI_API_KEY", api_key)
+                os.environ["GEMINI_API_KEY"] = api_key
+            if username:
+                if not update_default_user(username, password or None):
+                    return {"status": "error", "message": "Could not update login credentials."}
+
+            self.log_activity("Platform settings updated.")
+            return {"status": "success"}
+        except Exception as e:
+            print(f"Settings save error: {e}")
+            return {"status": "error", "message": str(e)}
+
+    def _set_env_value(self, key, value):
+        os.makedirs(os.path.dirname(ENV_FILE), exist_ok=True)
+        lines = []
+        if os.path.exists(ENV_FILE):
+            with open(ENV_FILE, "r", encoding="utf-8") as env_file:
+                lines = env_file.read().splitlines()
+
+        escaped_value = value.replace('"', '\\"')
+        new_line = f'{key}="{escaped_value}"'
+        updated = False
+        for index, line in enumerate(lines):
+            if line.strip().startswith(f"{key}="):
+                lines[index] = new_line
+                updated = True
+                break
+        if not updated:
+            lines.append(new_line)
+
+        with open(ENV_FILE, "w", encoding="utf-8") as env_file:
+            env_file.write("\n".join(lines) + "\n")
 
     # ── File management ──────────────────────────────────────────────────────
 
@@ -202,6 +297,19 @@ class Api:
             print(f"Analyze error: {e}")
             return {"status": "error", "message": str(e)}
 
+    def delete_file(self, file_id):
+        try:
+            file_info = get_file_by_id(file_id)
+            if not file_info:
+                return {"status": "error", "message": "File not found"}
+            if delete_db_file(file_id):
+                self.log_activity(f"Deleted analyzed file '{file_info['filename']}'.")
+                return {"status": "success", "message": "File deleted"}
+            return {"status": "error", "message": "Could not delete file"}
+        except Exception as e:
+            print(f"Delete file error: {e}")
+            return {"status": "error", "message": str(e)}
+
     # ── Dashboard data endpoints ─────────────────────────────────────────────
 
     def _extract_params(self, filter_params):
@@ -219,7 +327,8 @@ class Api:
                     "clusters": 0, "clusters_new": 0,
                     "high_priority": 0, "high_priority_change": 0,
                     "immediate_actions": 0, "immediate_actions_change": 0,
-                    "resolution_rate": 0, "resolution_rate_change": 0
+                    "resolution_rate": 0, "resolution_rate_change": 0,
+                    "feedbacks_collected": 0
                 }
             total_feedback = sum([c.get('frequency', 1) for c in clusters])
             high_priority = len([c for c in clusters if c.get('priority_score', 0) >= 70])
@@ -234,7 +343,8 @@ class Api:
                 "immediate_actions": immediate,
                 "immediate_actions_change": 0,
                 "resolution_rate": 88,
-                "resolution_rate_change": 4.2
+                "resolution_rate_change": 4.2,
+                "feedbacks_collected": total_feedback
             }
         except Exception as e:
             print(f"Error in get_kpi: {e}")
@@ -380,9 +490,11 @@ class Api:
                 elif score >= 70: sev = "high"
                 else: sev = "medium"
                 recommendations.append({
+                    "id": c.get("id"),
                     "title": f"Action Required: {c.get('topic')}",
                     "text": c.get('recommended_action', 'Review this feedback manually.'),
                     "priority": sev,
+                    "status": c.get("status", "pending"),
                     "source_ids": c.get("feedback_indices", [])
                 })
             return recommendations

@@ -65,6 +65,44 @@ def init_db():
     conn.commit()
     conn.close()
 
+def get_default_user():
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, username FROM users ORDER BY rowid LIMIT 1")
+        row = cursor.fetchone()
+        conn.close()
+        if row:
+            return {"id": row[0], "username": row[1]}
+        return {"id": None, "username": "admin"}
+    except Exception as e:
+        print(f"Error getting default user: {e}")
+        return {"id": None, "username": "admin"}
+
+def update_default_user(username, password=None):
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT id FROM users ORDER BY rowid LIMIT 1")
+        row = cursor.fetchone()
+        if row:
+            user_id = row[0]
+            if password:
+                cursor.execute("UPDATE users SET username=?, password=? WHERE id=?", (username, password, user_id))
+            else:
+                cursor.execute("UPDATE users SET username=? WHERE id=?", (username, user_id))
+        else:
+            cursor.execute(
+                "INSERT INTO users (id, username, password) VALUES (?, ?, ?)",
+                (str(uuid.uuid4()), username, password or "admin123")
+            )
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"Error updating default user: {e}")
+        return False
+
 def authenticate(username, password):
     try:
         conn = get_connection()
@@ -135,6 +173,7 @@ def save_clusters(clusters, file_id=None):
         cursor.execute("DELETE FROM clusters WHERE file_id=?", (file_id,))
         for c in clusters:
             c_id = c.get('id', str(uuid.uuid4()))
+            c['id'] = c_id
             topic = c.get('topic', '')
             category = c.get('category', '')
             score = c.get('priority_score', 0)
@@ -156,7 +195,7 @@ def load_clusters(file_id=None, filter_status=None, suggestions_only=False):
         conn = get_connection()
         cursor = conn.cursor()
         
-        query = "SELECT full_json, status FROM clusters WHERE file_id=?"
+        query = "SELECT full_json, status, id FROM clusters WHERE file_id=?"
         params = [file_id]
         
         if filter_status:
@@ -176,6 +215,7 @@ def load_clusters(file_id=None, filter_status=None, suggestions_only=False):
         for row in rows:
             data = json.loads(row[0])
             data['status'] = row[1]
+            data['id'] = row[2]
             results.append(data)
         return results
     except Exception as e:
@@ -201,4 +241,28 @@ def update_cluster_status(cluster_id, status):
         return True
     except Exception as e:
         print(f"Error updating status: {e}")
+        return False
+
+def delete_file(file_id):
+    try:
+        file_info = get_file_by_id(file_id)
+        if not file_info:
+            return False
+
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM clusters WHERE file_id=?", (file_id,))
+        cursor.execute("DELETE FROM files WHERE id=?", (file_id,))
+        conn.commit()
+        conn.close()
+
+        filepath = file_info.get("filepath")
+        uploads_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "uploads"))
+        if filepath:
+            abs_path = os.path.abspath(filepath)
+            if abs_path.startswith(uploads_dir) and os.path.exists(abs_path):
+                os.remove(abs_path)
+        return True
+    except Exception as e:
+        print(f"Error deleting file: {e}")
         return False

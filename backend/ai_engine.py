@@ -1,8 +1,11 @@
 from google import genai
 from google.genai import types
 from pydantic import BaseModel, Field
-from config import GEMINI_API_KEY
+from dotenv import load_dotenv
+import os
 import json
+
+ENV_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
 class IssueCluster(BaseModel):
     topic: str = Field(description="A short 1-3 word key topic representing the cluster (e.g., 'Cyberbullying', 'Transport Delays')")
@@ -22,10 +25,12 @@ class BatchAnalysisResult(BaseModel):
 def analyze_feedback_batch(feedback_list: list[str]) -> BatchAnalysisResult:
     """Analyzes a batch of feedback items in one LLM call and returns grouped clusters."""
     try:
-        if not GEMINI_API_KEY:
+        load_dotenv(ENV_FILE, override=True)
+        gemini_api_key = os.getenv("GEMINI_API_KEY", "")
+        if not gemini_api_key:
             raise ValueError("GEMINI_API_KEY is not set. Please set it in your .env file.")
         
-        client = genai.Client(api_key=GEMINI_API_KEY)
+        client = genai.Client(api_key=gemini_api_key)
     
         # Format the input as a numbered list
         formatted_input = ""
