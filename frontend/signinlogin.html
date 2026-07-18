@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Opinova — Login</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #0a0e17;
+    --bg-card: #151c2c;
+    --border: #1e293b;
+    --fg: #e2e8f0;
+    --fg-muted: #8896ab;
+    --accent: #00e5ff;
+    --accent-glow: rgba(0,229,255,0.25);
+  }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg-primary);
+    color: var(--fg);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+  }
+  .login-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 40px;
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  }
+  .login-card h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 24px;
+    margin-bottom: 8px;
+    color: var(--accent);
+  }
+  .login-card p {
+    color: var(--fg-muted);
+    font-size: 14px;
+    margin-bottom: 24px;
+  }
+  .input-group {
+    margin-bottom: 16px;
+    text-align: left;
+  }
+  .input-group label {
+    display: block;
+    font-size: 13px;
+    margin-bottom: 6px;
+    color: var(--fg-muted);
+  }
+  .input-group input {
+    width: 100%;
+    padding: 10px 12px;
+    background: #0a0e17;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--fg);
+    outline: none;
+    transition: border-color 0.3s;
+  }
+  .input-group input:focus {
+    border-color: var(--accent);
+  }
+  .btn-accent {
+    width: 100%;
+    background: var(--accent);
+    color: #0a0e17;
+    font-weight: 600;
+    padding: 12px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 10px;
+  }
+  .btn-accent:hover {
+    background: #00eabb;
+    box-shadow: 0 0 20px var(--accent-glow);
+  }
+  #error-message {
+    color: #ef4444;
+    font-size: 13px;
+    margin-top: 12px;
+    display: none;
+  }
+</style>
+</head>
+<body>
+
+<div class="login-card">
+  <h2>Opinova</h2>
+  <p>Sign in to access the Dashboard</p>
+  
+  <div class="input-group">
+    <label>Username</label>
+    <input type="text" id="username" placeholder="Enter your username">
+  </div>
+  
+  <div class="input-group">
+    <label>Password</label>
+    <input type="password" id="password" placeholder="Enter your password">
+  </div>
+  
+  <button class="btn-accent" onclick="attemptLogin()">Sign In</button>
+  <div id="error-message">Invalid username or password.</div>
+</div>
+
+<script>
+  function attemptLogin() {
+    const user = document.getElementById('username').value;
+    const pass = document.getElementById('password').value;
+    const err = document.getElementById('error-message');
+    
+    if(!user || !pass) {
+      err.textContent = "Please fill in all fields.";
+      err.style.display = "block";
+      return;
+    }
+    
+    if (window.pywebview && window.pywebview.api) {
+      window.pywebview.api.login(user, pass).then(result => {
+        if (!result) {
+          err.textContent = "Invalid username or password.";
+          err.style.display = "block";
+        } else {
+          window.location.href = result;
+        }
+      });
+    } else {
+      err.textContent = "Backend not connected. Are you running via python?";
+      err.style.display = "block";
+    }
+  }
+</script>
+</body>
+</html>

@@ -1,1 +1,1252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Opinova — Dashboard</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg-primary: #0a0e17;
+    --bg-secondary: #111827;
+    --bg-card: #151c2c;
+    --bg-card-hover: #1a2338;
+    --border: #1e293b;
+    --border-light: #2a3a52;
+    --fg: #e2e8f0;
+    --fg-muted: #8896ab;
+    --fg-dim: #5a6a80;
+    --accent: #00e5ff;
+    --accent-dim: rgba(0,229,255,0.12);
+    --accent-glow: rgba(0,229,255,0.25);
+    --warning: #f59e0b;
+    --warning-dim: rgba(245,158,11,0.12);
+    --danger: #ef4444;
+    --danger-dim: rgba(239,68,68,0.12);
+    --info: #38bdf8;
+    --info-dim: rgba(56,189,248,0.12);
+    --purple: #a78bfa;
+    --purple-dim: rgba(167,139,250,0.12);
+    --bg-topbar: rgba(10,14,23,0.8);
+  }
 
+  [data-theme="light"] {
+    --bg-primary: #f8fafc;
+    --bg-secondary: #ffffff;
+    --bg-card: #ffffff;
+    --bg-card-hover: #f1f5f9;
+    --border: #e2e8f0;
+    --border-light: #cbd5e1;
+    --fg: #0f172a;
+    --fg-muted: #475569;
+    --fg-dim: #64748b;
+    --accent: #0ea5e9;
+    --bg-topbar: rgba(248,250,252,0.8);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg-primary);
+    color: var(--fg);
+    overflow-x: hidden;
+  }
+  h1,h2,h3,h4,h5,h6 { font-family: 'Space Grotesk', sans-serif; }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg-primary); }
+  ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--fg-dim); }
+
+  .sidebar {
+    position: fixed; left:0; top:0; bottom:0;
+    width: 240px;
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border);
+    z-index: 50;
+    display: flex; flex-direction: column;
+    transition: transform 0.3s ease;
+  }
+  .sidebar-logo {
+    padding: 20px 20px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-logo h2 {
+    font-size: 18px; font-weight: 700;
+    background: linear-gradient(135deg, var(--accent), #38bdf8);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .sidebar-logo span { font-size: 11px; color: var(--fg-dim); display:block; margin-top:2px; }
+  .sidebar-nav { flex:1; padding: 12px 10px; overflow-y:auto; }
+  .nav-section { margin-bottom: 20px; }
+  .nav-section-title {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px;
+    color: var(--fg-dim); padding: 0 10px; margin-bottom: 6px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px; border-radius: 8px;
+    color: var(--fg-muted); font-size: 13.5px; font-weight: 500;
+    cursor: pointer; transition: all 0.2s; position: relative;
+  }
+  .nav-item:hover { background: rgba(255,255,255,0.04); color: var(--fg); }
+  .nav-item.active {
+    background: var(--accent-dim); color: var(--accent);
+  }
+  .nav-item.active::before {
+    content:''; position:absolute; left:0; top:50%; transform:translateY(-50%);
+    width:3px; height:20px; background:var(--accent); border-radius:0 3px 3px 0;
+  }
+  .nav-item i { width:18px; text-align:center; font-size:14px; }
+  .nav-badge {
+    margin-left:auto; font-size:10px; padding:2px 7px;
+    border-radius:10px; font-weight:600;
+  }
+
+  .main-area {
+    margin-left: 240px;
+    min-height: 100vh;
+    position: relative;
+  }
+
+  .bg-glow {
+    position: fixed; top: -120px; right: -120px;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+    pointer-events: none; z-index:0; opacity:0.4;
+    animation: glowPulse 8s ease-in-out infinite;
+  }
+  .bg-glow-2 {
+    position: fixed; bottom: -150px; left: 200px;
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(56,189,248,0.1) 0%, transparent 70%);
+    pointer-events: none; z-index:0; opacity:0.3;
+    animation: glowPulse 10s ease-in-out infinite reverse;
+  }
+  @keyframes glowPulse {
+    0%,100% { transform: scale(1); opacity:0.3; }
+    50% { transform: scale(1.15); opacity:0.5; }
+  }
+
+  .topbar {
+    position: sticky; top:0; z-index:40;
+    padding: 14px 28px;
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--bg-topbar);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+  }
+  .topbar-left h1 { font-size:20px; font-weight:700; }
+  .topbar-left p { font-size:12.5px; color:var(--fg-muted); margin-top:1px; }
+  .topbar-right { display:flex; align-items:center; gap:10px; }
+  .date-range {
+    display:flex; align-items:center; gap:6px;
+    background: var(--bg-card); border:1px solid var(--border);
+    padding: 7px 14px; border-radius:8px; font-size:13px; color:var(--fg-muted);
+  }
+  .date-range i { color:var(--accent); font-size:12px; }
+  .btn {
+    display:inline-flex; align-items:center; gap:6px;
+    padding: 7px 16px; border-radius:8px; font-size:13px; font-weight:500;
+    border:none; cursor:pointer; transition:all 0.2s;
+  }
+  .btn-outline {
+    background:transparent; border:1px solid var(--border-light);
+    color:var(--fg-muted);
+  }
+  .btn-outline:hover { border-color:var(--accent); color:var(--accent); }
+  .btn-accent {
+    background: var(--accent); color: #0a0e17; font-weight:600;
+  }
+  .btn-accent:hover { background:#00eabb; box-shadow:0 0 20px var(--accent-glow); }
+
+  .content { padding: 24px 28px; position:relative; z-index:1; }
+  .page-content { display: none; }
+  .page-content.active { display: block; }
+
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .kpi-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+  }
+  .kpi-card:hover {
+    border-color: var(--border-light);
+    background: var(--bg-card-hover);
+    transform: translateY(-2px) scale(1.02);
+    z-index: 10;
+  }
+  .kpi-card::after {
+    content:''; position:absolute; top:0; right:0;
+    width:80px; height:80px;
+    border-radius:50%;
+    filter: blur(40px);
+    opacity:0.15;
+    pointer-events:none;
+  }
+  .kpi-card:nth-child(1)::after { background: var(--accent); }
+  .kpi-card:nth-child(2)::after { background: var(--info); }
+  .kpi-card:nth-child(3)::after { background: var(--danger); }
+  .kpi-card:nth-child(4)::after { background: var(--warning); }
+  .kpi-card:nth-child(5)::after { background: var(--purple); }
+
+  .kpi-icon {
+    width:36px; height:36px; border-radius:9px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:15px; margin-bottom:12px;
+  }
+  .kpi-label { font-size:12px; color:var(--fg-muted); margin-bottom:6px; font-weight:500; }
+  .kpi-value { font-family:'Space Grotesk',sans-serif; font-size:26px; font-weight:700; line-height:1; }
+  .kpi-change {
+    display:inline-flex; align-items:center; gap:3px;
+    font-size:11.5px; font-weight:600; margin-top:8px;
+    padding:2px 8px; border-radius:6px;
+  }
+  .kpi-change.up { color:#22c55e; background:rgba(34,197,94,0.1); }
+  .kpi-change.down { color:var(--danger); background:var(--danger-dim); }
+  .kpi-sub { font-size:11px; color:var(--fg-dim); margin-top:4px; }
+
+  .mid-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: visible;
+    transition: transform 0.3s, border-color 0.3s;
+  }
+  .card:hover { border-color: var(--border-light); transform: scale(1.01); z-index: 10; }
+  .card-header {
+    padding: 16px 18px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+  .card-header h3 { font-size:14.5px; font-weight:600; }
+  .card-header .badge {
+    font-size:10.5px; padding:3px 9px; border-radius:6px; font-weight:600;
+  }
+  .card-body { padding: 18px; }
+
+  .matrix-container {
+    display: grid;
+    grid-template-columns: 60px 1fr;
+    grid-template-rows: 1fr 24px;
+    height: 260px;
+    gap: 4px;
+  }
+  .matrix-y-axis {
+    display:flex; flex-direction:column; justify-content:space-between;
+    align-items:center; padding-bottom:4px;
+  }
+  .matrix-y-axis span { font-size:9px; color:var(--fg-dim); }
+  .matrix-plot {
+    position:relative;
+    border:1px solid var(--border);
+    border-radius:6px;
+    background: rgba(0,0,0,0.2);
+  }
+  .matrix-plot::before {
+    content:''; position:absolute;
+    top:50%; left:0; right:0;
+    height:1px; background:var(--border); opacity:0.6;
+  }
+  .matrix-plot::after {
+    content:''; position:absolute;
+    left:50%; top:0; bottom:0;
+    width:1px; background:var(--border); opacity:0.6;
+  }
+  .matrix-x-axis {
+    display:flex; justify-content:space-between; align-items:center;
+    padding-left:60px;
+  }
+  .matrix-x-axis span { font-size:9px; color:var(--fg-dim); }
+  .matrix-dot {
+    position:absolute; width:12px; height:12px; border-radius:50%;
+    transform:translate(-50%,-50%);
+    cursor:pointer; transition: all 0.3s;
+    z-index:2;
+  }
+  .matrix-dot:hover { transform:translate(-50%,-50%) scale(1.6); z-index:5; }
+  .matrix-dot .dot-tooltip {
+    position:absolute; bottom:calc(100% + 8px); left:50%; transform:translateX(-50%);
+    background:var(--bg-secondary); border:1px solid var(--border-light);
+    padding:6px 10px; border-radius:6px; white-space:nowrap;
+    font-size:11px; pointer-events:none; opacity:0; transition:opacity 0.2s;
+    z-index:10;
+  }
+  .matrix-dot:hover .dot-tooltip { opacity:1; }
+
+  .issue-item {
+    display:flex; align-items:center; gap:12px;
+    padding:12px 0;
+    border-bottom:1px solid var(--border);
+  }
+  .issue-item:last-child { border-bottom:none; }
+  .issue-rank {
+    width:26px; height:26px; border-radius:7px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:12px; font-weight:700; flex-shrink:0;
+  }
+  .issue-info { flex:1; min-width:0; }
+  .issue-name { font-size:13px; font-weight:600; margin-bottom:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .issue-meta { font-size:11px; color:var(--fg-dim); }
+  .issue-score {
+    font-family:'Space Grotesk',sans-serif;
+    font-size:18px; font-weight:700; flex-shrink:0;
+  }
+  .issue-bar-bg {
+    width:80px; height:5px; border-radius:3px;
+    background:rgba(255,255,255,0.06); flex-shrink:0; overflow:hidden;
+  }
+  .issue-bar-fill { height:100%; border-radius:3px; transition:width 1s ease; }
+
+  .bottom-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+  }
+
+  .sentiment-ring {
+    width:140px; height:140px; margin:0 auto 14px; position:relative;
+  }
+  .sentiment-center {
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    text-align:center;
+  }
+  .sentiment-center .val { font-family:'Space Grotesk',sans-serif; font-size:28px; font-weight:700; color:var(--accent); }
+  .sentiment-center .lbl { font-size:10px; color:var(--fg-dim); }
+  .sentiment-legend { display:flex; flex-direction:column; gap:8px; }
+  .legend-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .legend-val { margin-left:auto; font-weight:600; font-size:12px; }
+
+  .ai-suggestion {
+    padding:14px; border-radius:10px;
+    background: linear-gradient(135deg, rgba(0,212,170,0.06), rgba(56,189,248,0.06));
+    border:1px solid rgba(0,212,170,0.15);
+    margin-bottom:12px;
+  }
+  .ai-suggestion:last-child { margin-bottom:0; }
+  .ai-suggestion-header {
+    display:flex; align-items:center; gap:8px; margin-bottom:8px;
+  }
+  .ai-icon {
+    width:24px; height:24px; border-radius:6px;
+    background: var(--accent-dim); color:var(--accent);
+    display:flex; align-items:center; justify-content:center;
+    font-size:11px;
+  }
+  .ai-suggestion-header span { font-size:12.5px; font-weight:600; }
+  .ai-suggestion p { font-size:12px; color:var(--fg-muted); line-height:1.6; }
+
+  .trend-sparkline { height:36px; margin-top:8px; }
+  .trend-sparkline canvas { width:100%!important; height:100%!important; }
+
+  .loading-overlay {
+    position:fixed; inset:0; z-index:9999;
+    background:var(--bg-primary);
+    display:flex; align-items:center; justify-content:center;
+    flex-direction:column; gap:16px;
+    transition: opacity 0.5s;
+  }
+  .loading-overlay.hidden { opacity:0; pointer-events:none; }
+  .loader-ring {
+    width:40px; height:40px; border-radius:50%;
+    border:3px solid var(--border);
+    border-top-color: var(--accent);
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  .toast-container {
+    position:fixed; top:20px; right:20px; z-index:9998;
+    display:flex; flex-direction:column; gap:8px;
+  }
+  .toast {
+    background:var(--bg-card); border:1px solid var(--border-light);
+    padding:12px 18px; border-radius:10px;
+    font-size:13px; display:flex; align-items:center; gap:10px;
+    box-shadow:0 8px 32px rgba(0,0,0,0.4);
+    animation: slideIn 0.3s ease;
+    max-width: 340px;
+  }
+  @keyframes slideIn { from { transform:translateX(100%); opacity:0; } to { transform:translateX(0); opacity:1; } }
+  .toast.success { border-left:3px solid var(--accent); }
+  .toast.error { border-left:3px solid var(--danger); }
+  .toast.info { border-left:3px solid var(--info); }
+
+  .modal-backdrop {
+    position:fixed; inset:0; z-index:100;
+    background:rgba(0,0,0,0.6); backdrop-filter:blur(4px);
+    display:none; align-items:center; justify-content:center;
+  }
+  .modal-backdrop.active { display:flex; }
+  .modal {
+    background:var(--bg-card); border:1px solid var(--border-light);
+    border-radius:14px; padding:24px; width:480px; max-width:90vw;
+    animation: modalIn 0.3s ease;
+  }
+  @keyframes modalIn { from { transform:scale(0.95); opacity:0; } to { transform:scale(1); opacity:1; } }
+  .modal h3 { font-size:16px; margin-bottom:16px; }
+  .modal label { display:block; font-size:12px; color:var(--fg-muted); margin-bottom:4px; margin-top:12px; }
+  .modal input, .modal select {
+    width:100%; padding:8px 12px; border-radius:8px;
+    background:var(--bg-primary); border:1px solid var(--border);
+    color:var(--fg); font-size:13px; outline:none;
+  }
+  .modal input:focus, .modal select:focus { border-color:var(--accent); }
+  .modal-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:20px; }
+
+  @media (max-width:1200px) {
+    .kpi-grid { grid-template-columns: repeat(3,1fr); }
+    .bottom-grid { grid-template-columns:1fr 1fr; }
+  }
+  @media (max-width:900px) {
+    .sidebar { transform:translateX(-100%); }
+    .sidebar.open { transform:translateX(0); }
+    .main-area { margin-left:0; }
+    .kpi-grid { grid-template-columns: repeat(2,1fr); }
+    .mid-grid { grid-template-columns:1fr; }
+    .bottom-grid { grid-template-columns:1fr; }
+    .mobile-toggle { display:flex!important; }
+  }
+  @media (max-width:600px) {
+    .kpi-grid { grid-template-columns:1fr; }
+    .topbar { flex-wrap:wrap; gap:10px; padding:12px 16px; }
+    .content { padding:16px; }
+    .date-range { display:none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration:0.01ms!important; transition-duration:0.01ms!important; }
+  }
+
+  .mobile-toggle { display:none!important; }
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loader-ring"></div>
+  <span style="font-size:13px;color:var(--fg-muted);">Loading dashboard data...</span>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<div class="modal-backdrop" id="filterModal">
+  <div class="modal" role="dialog" aria-label="Filter Settings">
+    <h3><i class="fa-solid fa-sliders" style="color:var(--accent);margin-right:8px;"></i>Filter Settings</h3>
+    <label for="filterCategory">Category</label>
+    <select id="filterCategory">
+      <option value="" disabled selected>Select Category...</option>
+      <option value="all">All Categories</option>
+      <option value="safety">Safety</option>
+      <option value="infrastructure">Infrastructure</option>
+      <option value="academic">Academic</option>
+      <option value="services">Services</option>
+    </select>
+    <label for="filterSentiment">Sentiment</label>
+    <select id="filterSentiment">
+      <option value="" disabled selected>Select Sentiment...</option>
+      <option value="all">All Sentiments</option>
+      <option value="positive">Positive</option>
+      <option value="neutral">Neutral</option>
+      <option value="negative">Negative</option>
+    </select>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeFilterModal()">Cancel</button>
+      <button class="btn btn-accent" onclick="applyFilter()">Apply Filter</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="rawFeedbackModal">
+  <div class="modal" role="dialog" style="width:700px; max-width:95vw; max-height:85vh; display:flex; flex-direction:column;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <h3 style="margin:0;"><i class="fa-solid fa-comments" style="color:var(--accent);margin-right:8px;"></i>Raw Feedback Data</h3>
+      <button class="btn btn-outline" style="padding:4px 10px;" onclick="closeRawFeedbackModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div id="rawFeedbackTitle" style="font-weight:600; font-size:14px; margin-bottom:12px; color:var(--info);"></div>
+    <div id="rawFeedbackContent" style="flex:1; overflow-y:auto; padding-right:10px; display:flex; flex-direction:column; gap:10px;">
+    </div>
+  </div>
+</div>
+
+<div class="bg-glow"></div>
+<div class="bg-glow-2"></div>
+
+<aside class="sidebar" id="sidebar" role="navigation" aria-label="Main Navigation">
+  <div class="sidebar-logo">
+    <h2>Opinova</h2>
+    <span>AI-Powered Feedback Analytics</span>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">
+      <div class="nav-section-title">Main</div>
+      <div class="nav-item active" data-page="dashboard" tabindex="0" role="button">
+        <i class="fa-solid fa-grid-2"></i> Dashboard
+      </div>
+      <div class="nav-item" data-page="feedback" tabindex="0" role="button">
+        <i class="fa-solid fa-message-lines"></i> Feedback Overview
+      </div>
+      <div class="nav-item" data-page="clusters" tabindex="0" role="button">
+        <i class="fa-solid fa-circle-nodes"></i> Cluster Analysis
+      </div>
+      <div class="nav-item" data-page="suggestions" tabindex="0" role="button">
+        <i class="fa-solid fa-lightbulb"></i> Suggestions
+      </div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Management</div>
+      <div class="nav-item" data-page="actions" tabindex="0" role="button">
+        <i class="fa-solid fa-bolt"></i> Action Items
+        <span class="nav-badge" id="actionItemsBadge" style="background:var(--danger-dim);color:var(--danger);">0</span>
+      </div>
+      <div class="nav-item" data-page="reports" tabindex="0" role="button">
+        <i class="fa-solid fa-file-chart-column"></i> Reports
+      </div>
+      <div class="nav-item" data-page="settings" tabindex="0" role="button">
+        <i class="fa-solid fa-gear"></i> Settings
+      </div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">System</div>
+      <div class="nav-item" data-page="logs" tabindex="0" role="button">
+        <i class="fa-solid fa-clock-rotate-left"></i> Activity Logs
+      </div>
+    </div>
+  </nav>
+  <div style="padding:12px 16px;border-top:1px solid var(--border);font-size:11px;color:var(--fg-dim);">
+    <i class="fa-solid fa-circle" style="color:#22c55e;font-size:6px;margin-right:4px;"></i>
+    Connected to PyWebView Desktop Backend
+  </div>
+</aside>
+
+<main class="main-area">
+  <header class="topbar">
+    <div style="display:flex;align-items:center;gap:14px;">
+      <button class="mobile-toggle btn btn-outline" onclick="toggleSidebar()" aria-label="Toggle menu">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+      <div class="topbar-left">
+        <h1>Dashboard</h1>
+      </div>
+    </div>
+    <div class="topbar-right" style="gap:8px;flex-wrap:wrap;">
+      <select id="globalFileFilter" class="btn btn-outline" onchange="onFileChange()" style="background:var(--bg-primary);color:var(--fg);border:1px solid var(--border);max-width:200px;" aria-label="Select file to view">
+        <option value="">— Select a file —</option>
+      </select>
+      <button id="btnAnalyze" class="btn btn-accent" onclick="analyzeCurrentFile()" disabled aria-label="Analyze selected file" style="opacity:0.5;">
+        <i class="fa-solid fa-brain"></i> Analyze
+      </button>
+      <button class="btn btn-outline" onclick="uploadCSV()" aria-label="Upload CSV Dataset">
+        <i class="fa-solid fa-upload"></i> Upload CSV
+      </button>
+      <select id="globalStatusFilter" class="btn btn-outline" onchange="refreshDashboard()" style="background:var(--bg-primary);color:var(--fg);border:1px solid var(--border);" aria-label="Filter by status">
+        <option value="">All</option>
+        <option value="pending" selected>Pending</option>
+        <option value="solved">Solved</option>
+      </select>
+      <button class="btn btn-outline" onclick="openFilterModal()" aria-label="Open filter settings">
+        <i class="fa-solid fa-filter"></i> Filter
+      </button>
+      <button class="btn btn-outline" onclick="exportReport()" aria-label="Export report">
+        <i class="fa-solid fa-download"></i> Export
+      </button>
+    </div>
+  </header>
+
+  <section class="content page-content active" id="page-dashboard">
+    <div class="kpi-grid" id="kpiGrid">
+      </div>
+
+    <div class="mid-grid">
+      <div class="card">
+        <div class="card-header">
+          <h3><i class="fa-solid fa-brain" style="color:var(--accent);margin-right:8px;"></i>AI Priority Matrix</h3>
+          <span class="badge" style="background:var(--accent-dim);color:var(--accent);">Real-time</span>
+        </div>
+        <div class="card-body">
+          <div class="matrix-container">
+            <div class="matrix-y-axis">
+              <span>High</span>
+              <span>Med</span>
+              <span>Low</span>
+            </div>
+            <div class="matrix-plot" id="matrixPlot">
+              </div>
+            <div class="matrix-x-axis" style="grid-column:2;">
+              <span>Low Freq</span>
+              <span>Medium</span>
+              <span>High Freq</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:16px;margin-top:10px;justify-content:center;">
+            <span style="font-size:10.5px;color:var(--fg-dim);display:flex;align-items:center;gap:4px;">
+              <span style="width:8px;height:8px;border-radius:50%;background:var(--danger);"></span> Critical
+            </span>
+            <span style="font-size:10.5px;color:var(--fg-dim);display:flex;align-items:center;gap:4px;">
+              <span style="width:8px;height:8px;border-radius:50%;background:var(--warning);"></span> High
+            </span>
+            <span style="font-size:10.5px;color:var(--fg-dim);display:flex;align-items:center;gap:4px;">
+              <span style="width:8px;height:8px;border-radius:50%;background:var(--info);"></span> Medium
+            </span>
+            <span style="font-size:10.5px;color:var(--fg-dim);display:flex;align-items:center;gap:4px;">
+              <span style="width:8px;height:8px;border-radius:50%;background:var(--fg-dim);"></span> Low
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3><i class="fa-solid fa-triangle-exclamation" style="color:var(--warning);margin-right:8px;"></i>Top Priority Issues</h3>
+          <span class="badge" style="background:var(--warning-dim);color:var(--warning);">8 Issues</span>
+        </div>
+        <div class="card-body" id="issuesList" style="padding-top:8px;padding-bottom:8px;">
+          </div>
+      </div>
+    </div>
+
+    <div class="bottom-grid">
+      <div class="card">
+        <div class="card-header">
+          <h3><i class="fa-solid fa-chart-pie" style="color:var(--purple);margin-right:8px;"></i>Sentiment Overview</h3>
+        </div>
+        <div class="card-body">
+          <div style="display:flex;align-items:center;gap:20px;">
+            <div class="sentiment-ring">
+              <canvas id="sentimentChart"></canvas>
+              <div class="sentiment-center">
+                <div class="val" id="sentimentMainVal">73%</div>
+                <div class="lbl">Positive</div>
+              </div>
+            </div>
+            <div class="sentiment-legend" id="sentimentLegend">
+              </div>
+          </div>
+          <div class="trend-sparkline" style="margin-top:16px;">
+            <canvas id="sentimentTrend"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3><i class="fa-solid fa-chart-line" style="color:var(--info);margin-right:8px;"></i>Feedback Trend</h3>
+        </div>
+        <div class="card-body">
+          <canvas id="trendChart" style="max-height:220px;"></canvas>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3><i class="fa-solid fa-wand-magic-sparkles" style="color:var(--accent);margin-right:8px;"></i>AI Recommendations</h3>
+          <span class="badge" style="background:var(--purple-dim);color:var(--purple);">3 Suggestions</span>
+        </div>
+        <div class="card-body" id="aiSuggestions">
+          </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="content page-content" id="page-feedback">
+    <div class="card" style="min-height:70vh;">
+      <div class="card-header">
+        <h3><i class="fa-solid fa-message-lines" style="color:var(--accent);margin-right:8px;"></i>Feedback Overview</h3>
+      </div>
+      <div class="card-body" style="padding:0;">
+        <div style="padding:16px; border-bottom:1px solid var(--border); display:flex; gap:10px;">
+           <input type="text" placeholder="Search raw feedback..." style="flex:1; padding:10px; background:var(--bg-primary); border:1px solid var(--border); border-radius:8px; color:var(--fg); font-size:13px;" />
+           <button class="btn btn-outline"><i class="fa-solid fa-filter"></i> Filters</button>
+        </div>
+        <div id="fullFeedbackList" style="padding:16px; display:flex; flex-direction:column; gap:12px;"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="content page-content" id="page-clusters">
+    <div class="card" style="min-height:70vh;">
+      <div class="card-header">
+        <h3><i class="fa-solid fa-circle-nodes" style="color:var(--info);margin-right:8px;"></i>Cluster Analysis</h3>
+      </div>
+      <div class="card-body">
+        <div id="fullClustersGrid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:16px;"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="content page-content" id="page-actions">
+    <div class="card" style="min-height:70vh;">
+      <div class="card-header">
+        <h3><i class="fa-solid fa-bolt" style="color:var(--danger);margin-right:8px;"></i>Action Items</h3>
+      </div>
+      <div class="card-body" style="padding:0;">
+        <div id="fullActionsList" style="padding:16px; display:flex; flex-direction:column; gap:12px;"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="content page-content" id="page-reports">
+    <div class="card" style="min-height:70vh;">
+      <div class="card-header">
+        <h3><i class="fa-solid fa-file-chart-column" style="color:var(--info);margin-right:8px;"></i>Reports Studio</h3>
+      </div>
+      <div class="card-body" style="display:flex; gap:32px;">
+         <div style="flex:1;">
+           <h4 style="margin-bottom:16px;">Generate New Report</h4>
+           <button class="btn btn-accent" style="width:100%; justify-content:center; padding:12px; margin-bottom:12px;" onclick="exportReport()"><i class="fa-solid fa-file-pdf"></i> Comprehensive PDF Report</button>
+           <button class="btn btn-outline" style="width:100%; justify-content:center; padding:12px;"><i class="fa-solid fa-file-csv"></i> Raw Data Export (CSV)</button>
+         </div>
+         <div style="flex:2; border-left:1px solid var(--border); padding-left:32px;">
+           <h4 style="margin-bottom:16px;">Recent Exports</h4>
+           <div style="color:var(--fg-muted); font-size:13px;">No recent exports found in this session.</div>
+         </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="content page-content" id="page-settings">
+    <div class="card" style="min-height:70vh;">
+      <div class="card-header">
+        <h3><i class="fa-solid fa-gear" style="color:var(--fg-muted);margin-right:8px;"></i>Platform Settings</h3>
+      </div>
+      <div class="card-body" style="display:flex; flex-direction:column; gap:20px; max-width:500px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div><strong style="font-size:14px;">Email Notifications</strong><div style="font-size:12px; color:var(--fg-muted);">Receive alerts for critical issues</div></div>
+          <button class="btn btn-outline" onclick="showToast('Settings saved', 'success')">Toggle</button>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div><strong style="font-size:14px;">Auto-Sync Database</strong><div style="font-size:12px; color:var(--fg-muted);">Run pipeline hourly</div></div>
+          <button class="btn btn-accent" onclick="showToast('Sync enabled', 'success')">Enabled</button>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div><strong style="font-size:14px;">Dark Mode</strong><div style="font-size:12px; color:var(--fg-muted);">Toggle dark/light theme</div></div>
+          <button id="themeToggleBtn" class="btn btn-accent" onclick="toggleTheme()">Enabled</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="content page-content" id="page-logs">
+    <div class="card" style="min-height:70vh;">
+      <div class="card-header">
+        <h3><i class="fa-solid fa-clock-rotate-left" style="color:var(--warning);margin-right:8px;"></i>Activity Logs</h3>
+        <button class="btn btn-outline" style="font-size:11px; padding:4px 8px; margin-left:auto;" onclick="loadActivities()">Refresh</button>
+      </div>
+      <div class="card-body">
+        <div id="activityLogsList" style="display:flex; flex-direction:column; gap:12px;">
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="content page-content" id="page-suggestions">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+      <h2>User Suggestions</h2>
+    </div>
+    <div class="mid-grid" style="grid-template-columns: 1fr;">
+      <div class="card">
+        <div class="card-body">
+          <div id="suggestionsList"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+
+// ── State ────────────────────────────────────────────────────────────────────
+let currentFilter = { category: 'all', sentiment: 'all' };
+let currentFileId = null;   // tracks the currently selected file
+let currentFiles = [];      // cached list of uploaded files
+
+function getFilterParams() {
+  const statusEl = document.getElementById('globalStatusFilter');
+  const status = statusEl ? statusEl.value : '';
+  return { ...currentFilter, status: status, file_id: currentFileId };
+}
+
+// ── API fetchers ─────────────────────────────────────────────────────────────
+function fetchKPI()              { return window.pywebview.api.get_kpi(getFilterParams()); }
+function fetchMatrix()           { return window.pywebview.api.get_matrix(getFilterParams()); }
+function fetchIssues()           { return window.pywebview.api.get_issues(getFilterParams()); }
+function fetchClustersDetail()   { return window.pywebview.api.get_clusters_detail(getFilterParams()); }
+function fetchSentiment()        { return window.pywebview.api.get_sentiment(getFilterParams()); }
+function fetchTrend()            { return window.pywebview.api.get_trend(getFilterParams()); }
+function fetchRecommendations()  { return window.pywebview.api.get_recommendations(getFilterParams()); }
+function fetchSuggestions()      { return window.pywebview.api.get_suggestions(getFilterParams()); }
+async function triggerExport()   { return window.pywebview.api.export_dashboard(getFilterParams()); }
+async function fetchActivities() { return window.pywebview.api.get_activities(); }
+
+// ── File management ──────────────────────────────────────────────────────────
+async function populateFileDropdown() {
+  currentFiles = await window.pywebview.api.get_files();
+  const sel = document.getElementById('globalFileFilter');
+  sel.innerHTML = '<option value="">— Select a file —</option>';
+  currentFiles.forEach(f => {
+    const opt = document.createElement('option');
+    opt.value = f.id;
+    opt.textContent = `${f.filename} (${f.status})`;
+    if (f.id === currentFileId) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  updateAnalyzeBtn();
+}
+
+function onFileChange() {
+  const sel = document.getElementById('globalFileFilter');
+  currentFileId = sel.value || null;
+  updateAnalyzeBtn();
+  loadDashboard();
+}
+
+function updateAnalyzeBtn() {
+  const btn = document.getElementById('btnAnalyze');
+  if (!currentFileId) {
+    btn.disabled = true;
+    btn.style.opacity = '0.5';
+    btn.title = 'Upload a CSV file first';
+    return;
+  }
+  const file = currentFiles.find(f => f.id === currentFileId);
+  if (file && (file.status === 'uploaded' || file.status === 'error')) {
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    btn.title = 'Run AI analysis on this file';
+  } else if (file && file.status === 'analyzed') {
+    btn.disabled = false;
+    btn.style.opacity = '0.85';
+    btn.title = 'Re-run analysis on this file';
+  } else {
+    btn.disabled = true;
+    btn.style.opacity = '0.5';
+  }
+}
+
+async function uploadCSV() {
+  const overlay = createOverlay('Waiting for file selection...');
+  document.body.appendChild(overlay);
+  try {
+    const response = await window.pywebview.api.upload_csv();
+    if (response && response.status === 'success') {
+      showToast(`File "${response.filename}" uploaded! Select it below and click Analyze.`, 'success');
+      await populateFileDropdown();
+      // Auto-select the newly uploaded file
+      const sel = document.getElementById('globalFileFilter');
+      sel.value = response.file_id;
+      currentFileId = response.file_id;
+      currentFiles = await window.pywebview.api.get_files();
+      updateAnalyzeBtn();
+    } else if (response && response.status !== 'cancelled') {
+      showToast(response.message || 'Upload failed.', 'error');
+    }
+  } catch (err) {
+    showToast('Upload error: ' + err, 'error');
+    console.error(err);
+  } finally {
+    overlay.remove();
+  }
+}
+
+async function analyzeCurrentFile() {
+  if (!currentFileId) { showToast('Please select a file first.', 'info'); return; }
+  const btn = document.getElementById('btnAnalyze');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Analyzing…';
+
+  const overlay = createOverlay('Running AI analysis — this may take a few minutes…');
+  document.body.appendChild(overlay);
+
+  try {
+    const result = await window.pywebview.api.analyze_file(currentFileId);
+    if (result && result.status === 'success') {
+      showToast('Analysis complete! Dashboard refreshed.', 'success');
+      await populateFileDropdown();
+      await loadDashboard();
+    } else {
+      showToast(result.message || 'Analysis failed. Check logs.', 'error');
+    }
+  } catch (err) {
+    showToast('Analysis error: ' + err, 'error');
+    console.error(err);
+  } finally {
+    overlay.remove();
+    btn.innerHTML = '<i class="fa-solid fa-brain"></i> Analyze';
+    updateAnalyzeBtn();
+  }
+}
+
+function createOverlay(msg) {
+  const overlay = document.createElement('div');
+  overlay.className = 'loading-overlay';
+  overlay.innerHTML = `<div class="loader-ring"></div><span style="font-size:13px;color:var(--fg-muted);">${msg}</span>`;
+  return overlay;
+}
+
+// ── Toggle issue status ───────────────────────────────────────────────────────
+async function toggleIssueStatus(id, currentStatus, event) {
+  event.stopPropagation();
+  const newStatus = currentStatus === 'pending' ? 'solved' : 'pending';
+  await window.pywebview.api.mark_issue_status(id, newStatus);
+  showToast('Issue marked as ' + newStatus, 'success');
+  refreshDashboard();
+}
+
+// ── Suggestions page ─────────────────────────────────────────────────────────
+function renderSuggestionsPage(suggs) {
+  const list = document.getElementById('suggestionsList');
+  if (!list) return;
+  if (!suggs || suggs.length === 0) {
+    list.innerHTML = '<div style="color:var(--fg-muted);">No suggestions found for current selection.</div>';
+    return;
+  }
+  list.innerHTML = suggs.map(d => `
+    <div style="background:var(--bg-primary); padding:16px; border-radius:12px; border:1px solid var(--border); margin-bottom:12px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h4 style="font-size:15px; font-weight:600; color:var(--info); margin:0;">${d.topic || 'Suggestion'}</h4>
+        <button class="btn btn-outline" style="padding:4px 8px; font-size:11px;" onclick="toggleIssueStatus('${d.id}', '${d.status}', event)">
+          ${d.status === 'pending' ? 'Mark Solved' : 'Mark Pending'}
+        </button>
+      </div>
+      <div style="font-size:12px; color:var(--fg-muted); margin-top:8px;">Frequency: ${d.frequency || 1}</div>
+    </div>
+  `).join('');
+}
+
+// ── KPI render ───────────────────────────────────────────────────────────────
+function renderKPI(data) {
+  const grid = document.getElementById('kpiGrid');
+  if (!data || !grid) return;
+  const cards = [
+    { icon: 'fa-solid fa-message', iconBg: 'var(--accent-dim)', iconColor: 'var(--accent)', label: 'Total Feedback Items', value: (data.total_feedback||0).toLocaleString() },
+    { icon: 'fa-solid fa-circle-nodes', iconBg: 'var(--info-dim)', iconColor: 'var(--info)', label: 'Identified Clusters', value: data.clusters||0 },
+    { icon: 'fa-solid fa-triangle-exclamation', iconBg: 'var(--danger-dim)', iconColor: 'var(--danger)', label: 'High Priority Issues', value: data.high_priority||0 },
+    { icon: 'fa-solid fa-bolt', iconBg: 'var(--warning-dim)', iconColor: 'var(--warning)', label: 'Immediate Actions', value: data.immediate_actions||0 },
+    { icon: 'fa-solid fa-check-double', iconBg: 'var(--purple-dim)', iconColor: 'var(--purple)', label: 'Resolution Rate', value: `${data.resolution_rate||0}%` }
+  ];
+  grid.innerHTML = cards.map((c, i) => `
+    <div class="kpi-card" style="animation:fadeUp 0.4s ease ${i * 0.07}s both;">
+      <div class="kpi-icon" style="background:${c.iconBg};color:${c.iconColor};"><i class="${c.icon}"></i></div>
+      <div class="kpi-label">${c.label}</div>
+      <div class="kpi-value">${c.value}</div>
+    </div>
+  `).join('');
+  if (!document.getElementById('fadeUpStyle')) {
+    const s = document.createElement('style');
+    s.id = 'fadeUpStyle';
+    s.textContent = `@keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }`;
+    document.head.appendChild(s);
+  }
+}
+
+// ── Matrix render ─────────────────────────────────────────────────────────────
+function renderMatrix(data) {
+  const plot = document.getElementById('matrixPlot');
+  if (!plot) return;
+  const severityColors = { critical: 'var(--danger)', high: 'var(--warning)', medium: 'var(--info)', low: 'var(--fg-dim)' };
+  const severityGlow   = { critical: 'rgba(239,68,68,0.4)', high: 'rgba(245,158,11,0.35)', medium: 'rgba(56,189,248,0.3)', low: 'rgba(90,106,128,0.2)' };
+  plot.innerHTML = (data||[]).map((d, i) => {
+    const xPos = Math.max(5, Math.min(95, d.x * 100));
+    const yPos = Math.max(5, Math.min(95, (1 - d.y) * 100));
+    return `
+    <div class="matrix-dot" style="left:${xPos}%;top:${yPos}%;background:${severityColors[d.severity]};box-shadow:0 0 12px ${severityGlow[d.severity]};animation:fadeUp 0.5s ease ${0.3 + i * 0.05}s both;">
+      <div class="dot-tooltip"><strong>${d.name}</strong><br>Score: ${d.score} · ${d.severity.charAt(0).toUpperCase() + d.severity.slice(1)}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Issues render ─────────────────────────────────────────────────────────────
+function renderIssues(data) {
+  window.currentIssuesData = data||[];
+  const list = document.getElementById('issuesList');
+  if (!list) return;
+  if (!data || data.length === 0) {
+    list.innerHTML = '<div style="color:var(--fg-muted);padding:20px;text-align:center;">No issues found. Upload and analyze a CSV file to get started.</div>';
+    return;
+  }
+  const rankColors = ['var(--danger)', 'var(--warning)', 'var(--warning)', 'var(--info)', 'var(--info)'];
+  const rankBgs    = ['var(--danger-dim)', 'var(--warning-dim)', 'var(--warning-dim)', 'var(--info-dim)', 'var(--info-dim)'];
+  list.innerHTML = data.map((d, i) => {
+    const barColor = d.score >= 75 ? 'var(--danger)' : d.score >= 50 ? 'var(--warning)' : 'var(--info)';
+    return `
+    <div class="issue-item" style="cursor:pointer;animation:fadeUp 0.4s ease ${0.4+i*0.06}s both;" onclick="openRawFeedbackModal(${i})" title="Click to view raw feedback">
+      <div class="issue-rank" style="background:${rankBgs[i]||'rgba(255,255,255,0.05)'};color:${rankColors[i]||'var(--fg-muted)'};">${d.rank}</div>
+      <div class="issue-info">
+        <div class="issue-name">${d.name}</div>
+        <div class="issue-meta">${d.category} · ${d.mentions} mentions${d.source_ids&&d.source_ids.length?' · Source IDs: '+d.source_ids.map(id=>'#'+id).join(', '):''}</div>
+      </div>
+      <div class="issue-bar-bg"><div class="issue-bar-fill" style="width:${d.score}%;background:${barColor};"></div></div>
+      <div class="issue-score" style="color:${barColor};">${d.score}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Sentiment chart ───────────────────────────────────────────────────────────
+let sentimentChartInstance = null;
+function renderSentiment(data) {
+  const ctx = document.getElementById('sentimentChart');
+  if (!ctx) return;
+  if (sentimentChartInstance) sentimentChartInstance.destroy();
+  const colors = ['#00e5ff', '#38bdf8', '#ef4444'];
+  const labels = ['Positive', 'Neutral', 'Negative'];
+  const values = [data.positive||0, data.neutral||0, data.negative||0];
+  sentimentChartInstance = new Chart(ctx.getContext('2d'), {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data: values, backgroundColor: colors, borderWidth: 0, spacing: 3 }] },
+    options: { cutout: '72%', responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } }, animation: { animateRotate: true, duration: 1200 } }
+  });
+  const legend = document.getElementById('sentimentLegend');
+  if (legend) legend.innerHTML = labels.map((l, i) => `
+    <div class="legend-item">
+      <span class="legend-dot" style="background:${colors[i]};"></span>
+      <span style="color:var(--fg-muted);">${l}</span>
+      <span class="legend-val">${values[i]}%</span>
+    </div>`).join('');
+  const mv = document.getElementById('sentimentMainVal');
+  if (mv) mv.textContent = (data.positive||0) + '%';
+}
+
+// ── Trend chart ───────────────────────────────────────────────────────────────
+let trendChartInstance = null;
+function renderTrend(data) {
+  const ctx = document.getElementById('trendChart');
+  if (!ctx) return;
+  if (trendChartInstance) trendChartInstance.destroy();
+  trendChartInstance = new Chart(ctx.getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: data.labels||[],
+      datasets: [
+        { label: 'Positive', data: data.positive||[], backgroundColor: 'rgba(0,229,255,0.7)', borderRadius: 4 },
+        { label: 'Neutral',  data: data.neutral||[],  backgroundColor: 'rgba(56,189,248,0.6)', borderRadius: 4 },
+        { label: 'Negative', data: data.negative||[], backgroundColor: 'rgba(239,68,68,0.6)',  borderRadius: 4 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'top', align: 'end', labels: { color: '#8896ab', font: { size: 11, family: 'DM Sans' } } } },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: '#5a6a80' } },
+        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#5a6a80' }, beginAtZero: true }
+      }
+    }
+  });
+}
+
+// ── Recommendations ───────────────────────────────────────────────────────────
+function renderRecommendations(data) {
+  const container = document.getElementById('aiSuggestions');
+  if (!container) return;
+  const priorityStyles = {
+    critical: { icon: 'fa-solid fa-fire',            color: 'var(--danger)', bg: 'var(--danger-dim)' },
+    high:     { icon: 'fa-solid fa-arrow-trend-up',  color: 'var(--warning)',bg: 'var(--warning-dim)' },
+    medium:   { icon: 'fa-solid fa-lightbulb',       color: 'var(--info)',   bg: 'var(--info-dim)' }
+  };
+  if (!data || data.length === 0) {
+    container.innerHTML = '<div style="color:var(--fg-muted);">No recommendations yet. Analyze a file first.</div>';
+    return;
+  }
+  container.innerHTML = data.map((r, i) => {
+    const s = priorityStyles[r.priority] || priorityStyles.medium;
+    return `
+    <div class="ai-suggestion" style="animation:fadeUp 0.4s ease ${0.5+i*0.08}s both;">
+      <div class="ai-suggestion-header">
+        <div class="ai-icon" style="background:${s.bg};color:${s.color};"><i class="${s.icon}"></i></div>
+        <span>${r.title}</span>
+      </div>
+      <p>${r.text}</p>
+      ${r.source_ids&&r.source_ids.length?`<div style="font-size:10.5px;color:var(--fg-dim);margin-top:8px;">Source Submissions: ${r.source_ids.map(id=>'#'+id).join(', ')}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+// ── Full pages render ─────────────────────────────────────────────────────────
+function renderFullPages(issues, clusters, actions) {
+  const fbList = document.getElementById('fullFeedbackList');
+  if (fbList) {
+    let allFeedbacks = [];
+    (issues||[]).forEach(i => { if(i.original_texts) i.original_texts.forEach(t => allFeedbacks.push({text: t, issue: i.name, score: i.score})); });
+    fbList.innerHTML = allFeedbacks.length ? allFeedbacks.map(f => `
+      <div style="background:var(--bg-primary); padding:16px; border-radius:8px; border:1px solid var(--border);">
+        <div style="font-size:13px; line-height:1.5; margin-bottom:8px;">"${f.text}"</div>
+        <div style="font-size:11px; color:var(--fg-muted);">Tagged under: <span style="color:var(--accent);">${f.issue}</span> (Priority: ${f.score})</div>
+      </div>`).join('') : '<div style="color:var(--fg-muted);padding:20px;text-align:center;">No feedback data. Analyze a CSV to populate this view.</div>';
+  }
+
+  const cGrid = document.getElementById('fullClustersGrid');
+  if (cGrid && clusters) {
+    cGrid.innerHTML = clusters.length ? clusters.map(c => {
+      const score = c.priority_score || 0;
+      const color = score >= 75 ? 'var(--danger)' : score >= 50 ? 'var(--warning)' : 'var(--info)';
+      return `
+      <div style="background:var(--bg-primary); padding:16px; border-radius:12px; border:1px solid var(--border); display:flex; flex-direction:column; gap:10px;">
+        <h4 style="font-size:15px; font-weight:600; color:${color}; margin:0;">${c.topic || 'Unknown'}</h4>
+        <div style="font-size:12px; color:var(--fg-muted); line-height:1.5;">${c.reasoning || 'No specific reasoning provided.'}</div>
+        <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--fg-dim); margin-top:auto; padding-top:10px; border-top:1px solid var(--border);">
+          <span>Score: <strong style="color:${color}">${score}</strong></span>
+          <span>Mentions: <strong>${c.frequency || 1}</strong></span>
+        </div>
+      </div>`;
+    }).join('') : '<div style="color:var(--fg-muted);padding:20px;grid-column:1/-1;text-align:center;">No clusters found for this selection.</div>';
+  }
+
+  const aList = document.getElementById('fullActionsList');
+  if (aList && actions) {
+    const badge = document.getElementById('actionItemsBadge');
+    if (badge) badge.textContent = actions.length;
+    aList.innerHTML = actions.map(a => `
+      <div style="background:var(--bg-primary); padding:16px; border-radius:8px; border-left:4px solid ${a.priority==='critical'?'var(--danger)':a.priority==='high'?'var(--warning)':'var(--info)'}; display:flex; align-items:center; gap:16px;">
+        <input type="checkbox" style="width:18px; height:18px; cursor:pointer;" onclick="showToast('Action item marked as resolved!', 'success'); this.disabled=true;" />
+        <div style="flex:1;">
+          <div style="font-size:14px; font-weight:600;">${a.title}</div>
+          <div style="font-size:12px; color:var(--fg-muted); margin-top:4px;">${a.text}</div>
+        </div>
+        <button class="btn btn-outline" style="font-size:11px; padding:6px 12px;" onclick="showToast('Action successfully delegated.', 'success')">Delegate</button>
+      </div>`).join('');
+  }
+}
+
+// ── Raw feedback modal ────────────────────────────────────────────────────────
+window.currentIssuesData = [];
+function openRawFeedbackModal(index) {
+  const issue = window.currentIssuesData[index];
+  if (!issue) return;
+  document.getElementById('rawFeedbackTitle').innerText = issue.name;
+  const container = document.getElementById('rawFeedbackContent');
+  if (issue.original_texts && issue.original_texts.length > 0) {
+    container.innerHTML = issue.original_texts.map(text => `
+      <div style="background:var(--bg-primary); padding:12px; border-radius:8px; border-left:3px solid var(--accent); font-size:13px; line-height:1.5;">${text}</div>`).join('');
+  } else {
+    container.innerHTML = `<div style="color:var(--fg-muted); font-size:13px; text-align:center; padding:20px;">No raw data available for this issue.</div>`;
+  }
+  document.getElementById('rawFeedbackModal').classList.add('active');
+}
+function closeRawFeedbackModal() { document.getElementById('rawFeedbackModal').classList.remove('active'); }
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+function showToast(message, type = 'info') {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  const icons  = { success: 'fa-circle-check', error: 'fa-circle-xmark', info: 'fa-circle-info' };
+  const colors = { success: 'var(--accent)',   error: 'var(--danger)',    info: 'var(--info)' };
+  toast.innerHTML = `<i class="fa-solid ${icons[type]}" style="color:${colors[type]};font-size:16px;flex-shrink:0;"></i><span>${message}</span>`;
+  container.appendChild(toast);
+  setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateX(100%)'; toast.style.transition = 'all 0.3s'; }, 3500);
+  setTimeout(() => toast.remove(), 4000);
+}
+
+// ── Filter modal ──────────────────────────────────────────────────────────────
+function openFilterModal()  { document.getElementById('filterModal').classList.add('active'); }
+function closeFilterModal() { document.getElementById('filterModal').classList.remove('active'); }
+async function applyFilter() {
+  currentFilter.category  = document.getElementById('filterCategory').value;
+  currentFilter.sentiment = document.getElementById('filterSentiment').value;
+  closeFilterModal();
+  showToast('Filters applied.', 'info');
+  await loadDashboard();
+}
+
+// ── Export ────────────────────────────────────────────────────────────────────
+async function exportReport() {
+  showToast('Exporting report…', 'info');
+  try {
+    const r = await triggerExport();
+    showToast(r && r.status === 'success' ? 'Report exported successfully.' : 'Export cancelled or failed.', r && r.status === 'success' ? 'success' : 'info');
+  } catch { showToast('Export failed.', 'error'); }
+}
+
+// ── Sidebar nav ───────────────────────────────────────────────────────────────
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', function() {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    this.classList.add('active');
+    const pageId = 'page-' + this.getAttribute('data-page');
+    document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
+    const targetPage = document.getElementById(pageId);
+    if (targetPage) targetPage.classList.add('active');
+    if (window.innerWidth <= 900) document.getElementById('sidebar').classList.remove('open');
+  });
+});
+
+// ── Theme ─────────────────────────────────────────────────────────────────────
+function toggleTheme() {
+  const body = document.body;
+  if (body.getAttribute('data-theme') === 'light') {
+    body.removeAttribute('data-theme');
+    document.getElementById('themeToggleBtn').textContent = 'Enabled';
+    showToast('Dark mode enabled', 'success');
+  } else {
+    body.setAttribute('data-theme', 'light');
+    document.getElementById('themeToggleBtn').textContent = 'Disabled';
+    showToast('Light mode enabled', 'success');
+  }
+}
+
+// ── Activity logs ─────────────────────────────────────────────────────────────
+async function loadActivities() {
+  try {
+    const activities = await fetchActivities();
+    const list = document.getElementById('activityLogsList');
+    if (!list) return;
+    list.innerHTML = activities.map(a => `
+      <div style="padding:12px; border-left:2px solid var(--accent); background:var(--bg-primary);">
+        <strong>System Log</strong>: ${a.message}
+        <span style="color:var(--fg-muted); font-size:11px; float:right;">${a.time}</span>
+      </div>`).join('');
+  } catch (e) { console.error(e); }
+}
+
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+
+// ── Dashboard load ────────────────────────────────────────────────────────────
+async function refreshDashboard() { await loadDashboard(); }
+
+async function loadDashboard() {
+  try {
+    const [kpi, matrix, issues, sentiment, trend, recs, clustersDetail, suggestionsList] = await Promise.all([
+      fetchKPI(), fetchMatrix(), fetchIssues(), fetchSentiment(),
+      fetchTrend(), fetchRecommendations(), fetchClustersDetail(), fetchSuggestions()
+    ]);
+    renderKPI(kpi);
+    renderMatrix(matrix);
+    renderIssues(issues);
+    renderSentiment(sentiment);
+    renderTrend(trend);
+    renderRecommendations(recs);
+    renderFullPages(issues, clustersDetail, recs);
+    renderSuggestionsPage(suggestionsList);
+    await loadActivities();
+  } catch (err) {
+    console.error('Dashboard load error:', err);
+  }
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+window.addEventListener('pywebviewready', async () => {
+  await populateFileDropdown();
+  await loadDashboard();
+  const overlay = document.getElementById('loadingOverlay');
+  if (overlay) { overlay.classList.add('hidden'); setTimeout(() => overlay.remove(), 600); }
+});
+</script>
+</body>
+</html>
