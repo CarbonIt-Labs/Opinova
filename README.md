@@ -184,7 +184,6 @@ while providing attribution requirements and contributor protections. See the `L
 
 ---
 
-© 2026 Edwin Sam K Reju — **CarbonIt Labs**
-
+© 2026 Edwin Sam K Reju
 **Millions of opinions.  
 One intelligent direction.**
