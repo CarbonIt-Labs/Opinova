@@ -125,8 +125,7 @@ See the `LICENSE` file for complete license terms.
 
 ---
 
-© 2026 CarbonIt Labs  
-Created by Edwin Sam K Reju
+© 2026 Edwin Sam K Reju
 
 **Millions of opinions.  
 One intelligent direction.**
