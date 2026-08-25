@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Opinova — Login</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<link rel="icon" type="image/png" href="../backend/opinova_transparent_favcon.png">
+<link rel="icon" type="image/png" href="../logo.png">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -113,6 +113,11 @@
   
   <button class="btn-accent" onclick="attemptLogin()">Sign In</button>
   <div id="error-message">Invalid username or password.</div>
+</div>
+
+<div style="position: absolute; bottom: 20px; font-size: 12px; display: flex; gap: 15px;">
+  <a href="privacy.html" style="color: var(--fg-muted); text-decoration: none;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--fg-muted)'">Privacy Policy</a>
+  <a href="terms.html" style="color: var(--fg-muted); text-decoration: none;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--fg-muted)'">Terms of Use</a>
 </div>
 
 <script>

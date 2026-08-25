@@ -6,7 +6,7 @@
 <title>Opinova — Dashboard</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<link rel="icon" type="image/png" href="../backend/opinova_transparent_favcon.png">
+<link rel="icon" type="image/png" href="../logo.png">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
@@ -288,9 +288,9 @@
   .matrix-dot .dot-tooltip {
     position:absolute; bottom:calc(100% + 8px); left:50%; transform:translateX(-50%);
     background:var(--bg-secondary); border:1px solid var(--border-light);
-    padding:6px 10px; border-radius:6px; white-space:nowrap;
+    padding:10px 14px; border-radius:8px; white-space:normal; max-width:280px; min-width:200px;
     font-size:11px; pointer-events:none; opacity:0; transition:opacity 0.2s;
-    z-index:10;
+    z-index:10; line-height:1.6; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
   }
   .matrix-dot:hover .dot-tooltip { opacity:1; }
 
@@ -298,8 +298,17 @@
     display:flex; align-items:center; gap:12px;
     padding:12px 0;
     border-bottom:1px solid var(--border);
+    position: relative;
   }
   .issue-item:last-child { border-bottom:none; }
+  .issue-item .why-tooltip {
+    position:absolute; bottom:calc(100% + 6px); left:0; right:0;
+    background:var(--bg-secondary); border:1px solid var(--border-light);
+    padding:10px 14px; border-radius:8px; font-size:11px;
+    pointer-events:none; opacity:0; transition:opacity 0.2s;
+    z-index:10; line-height:1.6; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+  .issue-item:hover .why-tooltip { opacity:1; }
   .issue-rank {
     width:26px; height:26px; border-radius:7px;
     display:flex; align-items:center; justify-content:center;
@@ -414,6 +423,33 @@
   .modal input:focus, .modal select:focus { border-color:var(--accent); }
   .modal-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:20px; }
 
+  /* Cluster card hover mentions tooltip */
+  .cluster-mention-tag {
+    display:inline-block; padding:2px 8px; border-radius:12px;
+    background:var(--accent-dim); color:var(--accent);
+    font-size:10.5px; cursor:default; position:relative;
+    margin: 2px;
+  }
+  .cluster-mention-tag .mention-tip {
+    position:absolute; bottom:calc(100%+6px); left:50%; transform:translateX(-50%);
+    background:var(--bg-secondary); border:1px solid var(--border-light);
+    padding:6px 10px; border-radius:6px; white-space:nowrap;
+    font-size:11px; pointer-events:none; opacity:0; transition:opacity 0.2s;
+    z-index:20; box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  }
+  .cluster-mention-tag:hover .mention-tip { opacity:1; }
+
+  /* Recent exports list */
+  .export-item {
+    display:flex; align-items:center; gap:12px;
+    padding:10px 14px; border-radius:8px;
+    background:var(--bg-primary); border:1px solid var(--border);
+    margin-bottom:8px; font-size:13px;
+  }
+  .export-item i { color:var(--accent); flex-shrink:0; }
+  .export-item .exp-name { flex:1; font-weight:500; }
+  .export-item .exp-time { font-size:11px; color:var(--fg-muted); }
+
   @media (max-width:1200px) {
     .kpi-grid { grid-template-columns: repeat(3,1fr); }
     .bottom-grid { grid-template-columns:1fr 1fr; }
@@ -439,6 +475,8 @@
   }
 
   .mobile-toggle { display:none!important; }
+
+  @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
 </style>
 </head>
 <body>
@@ -534,6 +572,10 @@
   <div style="padding:12px 16px;border-top:1px solid var(--border);font-size:11px;color:var(--fg-dim);">
     <i class="fa-solid fa-circle" style="color:#22c55e;font-size:6px;margin-right:4px;"></i>
     Connected to PyWebView Desktop Backend
+    <div style="margin-top:8px; display:flex; gap:10px;">
+      <a href="privacy.html" style="color:var(--fg-dim); text-decoration:none;" class="hover:text-white">Privacy Policy</a>
+      <a href="terms.html" style="color:var(--fg-dim); text-decoration:none;" class="hover:text-white">Terms of Use</a>
+    </div>
   </div>
 </aside>
 
@@ -569,9 +611,9 @@
     </div>
   </header>
 
+  <!-- DASHBOARD PAGE -->
   <section class="content page-content active" id="page-dashboard">
-    <div class="kpi-grid" id="kpiGrid">
-      </div>
+    <div class="kpi-grid" id="kpiGrid"></div>
 
     <div class="mid-grid">
       <div class="card">
@@ -586,8 +628,7 @@
               <span>Med</span>
               <span>Low</span>
             </div>
-            <div class="matrix-plot" id="matrixPlot">
-              </div>
+            <div class="matrix-plot" id="matrixPlot"></div>
             <div class="matrix-x-axis" style="grid-column:2;">
               <span>Low Freq</span>
               <span>Medium</span>
@@ -614,10 +655,9 @@
       <div class="card">
         <div class="card-header">
           <h3><i class="fa-solid fa-triangle-exclamation" style="color:var(--warning);margin-right:8px;"></i>Top Priority Issues</h3>
-          <span class="badge" style="background:var(--warning-dim);color:var(--warning);">8 Issues</span>
+          <span class="badge" id="issuesBadge" style="background:var(--warning-dim);color:var(--warning);">0 Issues</span>
         </div>
-        <div class="card-body" id="issuesList" style="padding-top:8px;padding-bottom:8px;">
-          </div>
+        <div class="card-body" id="issuesList" style="padding-top:8px;padding-bottom:8px;"></div>
       </div>
     </div>
 
@@ -631,12 +671,11 @@
             <div class="sentiment-ring">
               <canvas id="sentimentChart"></canvas>
               <div class="sentiment-center">
-                <div class="val" id="sentimentMainVal">73%</div>
+                <div class="val" id="sentimentMainVal">0%</div>
                 <div class="lbl">Positive</div>
               </div>
             </div>
-            <div class="sentiment-legend" id="sentimentLegend">
-              </div>
+            <div class="sentiment-legend" id="sentimentLegend"></div>
           </div>
           <div class="trend-sparkline" style="margin-top:16px;">
             <canvas id="sentimentTrend"></canvas>
@@ -656,29 +695,31 @@
       <div class="card">
         <div class="card-header">
           <h3><i class="fa-solid fa-wand-magic-sparkles" style="color:var(--accent);margin-right:8px;"></i>AI Recommendations</h3>
-          <span class="badge" style="background:var(--purple-dim);color:var(--purple);">3 Suggestions</span>
+          <span class="badge" id="suggBadge" style="background:var(--purple-dim);color:var(--purple);">0 Suggestions</span>
         </div>
-        <div class="card-body" id="aiSuggestions">
-          </div>
+        <div class="card-body" id="aiSuggestions"></div>
       </div>
     </div>
   </section>
 
+  <!-- FEEDBACK OVERVIEW PAGE -->
   <section class="content page-content" id="page-feedback">
     <div class="card" style="min-height:70vh;">
       <div class="card-header">
         <h3><i class="fa-solid fa-message-lines" style="color:var(--accent);margin-right:8px;"></i>Feedback Overview</h3>
       </div>
       <div class="card-body" style="padding:0;">
-        <div style="padding:16px; border-bottom:1px solid var(--border); display:flex; gap:10px;">
-           <input type="text" placeholder="Search raw feedback..." style="flex:1; padding:10px; background:var(--bg-primary); border:1px solid var(--border); border-radius:8px; color:var(--fg); font-size:13px;" />
-           <button class="btn btn-outline"><i class="fa-solid fa-filter"></i> Filters</button>
+        <div style="padding:16px; border-bottom:1px solid var(--border); display:flex; gap:10px; flex-wrap:wrap;">
+          <input type="text" id="feedbackSearchText" placeholder="Search raw feedback..." oninput="filterFeedback()" style="flex:1; min-width:160px; padding:10px; background:var(--bg-primary); border:1px solid var(--border); border-radius:8px; color:var(--fg); font-size:13px;" />
+          <input type="text" id="feedbackSearchId" placeholder="Search by ID (e.g. 3)" oninput="filterFeedback()" style="width:180px; padding:10px; background:var(--bg-primary); border:1px solid var(--border); border-radius:8px; color:var(--fg); font-size:13px;" />
+          <button class="btn btn-outline" onclick="openFilterModal()"><i class="fa-solid fa-filter"></i> Filters</button>
         </div>
         <div id="fullFeedbackList" style="padding:16px; display:flex; flex-direction:column; gap:12px;"></div>
       </div>
     </div>
   </section>
 
+  <!-- CLUSTER ANALYSIS PAGE -->
   <section class="content page-content" id="page-clusters">
     <div class="card" style="min-height:70vh;">
       <div class="card-header">
@@ -690,6 +731,7 @@
     </div>
   </section>
 
+  <!-- ACTION ITEMS PAGE -->
   <section class="content page-content" id="page-actions">
     <div class="card" style="min-height:70vh;">
       <div class="card-header">
@@ -701,31 +743,37 @@
     </div>
   </section>
 
+  <!-- REPORTS PAGE -->
   <section class="content page-content" id="page-reports">
     <div class="card" style="min-height:70vh;">
       <div class="card-header">
         <h3><i class="fa-solid fa-file-chart-column" style="color:var(--info);margin-right:8px;"></i>Reports Studio</h3>
       </div>
-      <div class="card-body" style="display:flex; gap:32px;">
-         <div style="flex:1;">
-           <h4 style="margin-bottom:16px;">Generate New Report</h4>
-           <button class="btn btn-accent" style="width:100%; justify-content:center; padding:12px; margin-bottom:12px;" onclick="exportReport()"><i class="fa-solid fa-file-pdf"></i> Comprehensive PDF Report</button>
-           <button class="btn btn-outline" style="width:100%; justify-content:center; padding:12px;"><i class="fa-solid fa-file-csv"></i> Raw Data Export (CSV)</button>
-         </div>
-         <div style="flex:2; border-left:1px solid var(--border); padding-left:32px;">
-           <h4 style="margin-bottom:16px;">Recent Exports</h4>
-           <div style="color:var(--fg-muted); font-size:13px;">No recent exports found in this session.</div>
-         </div>
+      <div class="card-body" style="display:flex; gap:32px; flex-wrap:wrap;">
+        <div style="flex:1; min-width:200px;">
+          <h4 style="margin-bottom:16px;">Generate New Report</h4>
+          <button class="btn btn-accent" style="width:100%; justify-content:center; padding:12px; margin-bottom:12px;" onclick="exportPDFReport()">
+            <i class="fa-solid fa-file-pdf"></i> Comprehensive PDF Report
+          </button>
+          <button class="btn btn-outline" style="width:100%; justify-content:center; padding:12px;" onclick="exportCSVReport()">
+            <i class="fa-solid fa-file-csv"></i> Raw Data Export (CSV)
+          </button>
+        </div>
+        <div style="flex:2; border-left:1px solid var(--border); padding-left:32px; min-width:240px;">
+          <h4 style="margin-bottom:16px;">Recent Exports</h4>
+          <div id="recentExportsList" style="color:var(--fg-muted); font-size:13px;">No recent exports found in this session.</div>
+        </div>
       </div>
     </div>
   </section>
 
+  <!-- SETTINGS PAGE -->
   <section class="content page-content" id="page-settings">
     <div class="card" style="min-height:70vh;">
       <div class="card-header">
         <h3><i class="fa-solid fa-gear" style="color:var(--fg-muted);margin-right:8px;"></i>Platform Settings</h3>
       </div>
-      <div class="card-body" style="display:flex; flex-direction:column; gap:20px; max-width:560px;">
+      <div class="card-body" style="display:flex; flex-direction:column; gap:20px; max-width:560px; margin-bottom:50px;">
         <div style="display:flex; flex-direction:column; gap:10px;">
           <div><strong style="font-size:14px;">AI API Key</strong><div style="font-size:12px; color:var(--fg-muted);">Saved to the app .env file for analysis</div></div>
           <input id="settingsApiKey" type="password" placeholder="Enter Gemini API key" style="width:100%; padding:10px 12px; background:var(--bg-primary); border:1px solid var(--border); border-radius:8px; color:var(--fg); font-size:13px;">
@@ -734,11 +782,26 @@
           <div><strong style="font-size:14px;">Default Login</strong><div style="font-size:12px; color:var(--fg-muted);">Change the user ID and password used on sign in</div></div>
           <input id="settingsUsername" type="text" placeholder="User ID" style="width:100%; padding:10px 12px; background:var(--bg-primary); border:1px solid var(--border); border-radius:8px; color:var(--fg); font-size:13px;">
           <input id="settingsPassword" type="password" placeholder="New password (leave blank to keep current)" style="width:100%; padding:10px 12px; background:var(--bg-primary); border:1px solid var(--border); border-radius:8px; color:var(--fg); font-size:13px;">
+          <div style="margin-top:10px; border-top:1px solid var(--border); padding-top:15px;">
+            <strong style="font-size:14px; color:var(--accent);"><i class="fa-solid fa-wand-magic-sparkles"></i> Optimizer Settings</strong>
+            <div style="font-size:12px; color:var(--fg-muted); margin-bottom:10px;">Adjust local preprocessing parameters</div>
+            <label style="font-size:12px; color:var(--fg-dim);">Duplicate Similarity Threshold (%)</label>
+            <input id="settingsDupThresh" type="number" min="0" max="100" placeholder="90" style="width:100%; padding:10px 12px; background:var(--bg-primary); border:1px solid var(--border); border-radius:8px; color:var(--fg); font-size:13px; margin-bottom:10px;">
+            <label style="font-size:12px; color:var(--fg-dim);">Batch Size (AI Payload)</label>
+            <input id="settingsBatchSize" type="number" min="1" max="100" placeholder="50" style="width:100%; padding:10px 12px; background:var(--bg-primary); border:1px solid var(--border); border-radius:8px; color:var(--fg); font-size:13px; margin-bottom:10px;">
+            <label style="font-size:12px; color:var(--fg-dim);">Minimum Feedback Length (chars)</label>
+            <input id="settingsMinLen" type="number" min="1" placeholder="3" style="width:100%; padding:10px 12px; background:var(--bg-primary); border:1px solid var(--border); border-radius:8px; color:var(--fg); font-size:13px; margin-bottom:10px;">
+            <label style="font-size:12px; color:var(--fg-dim);">Ignored Phrases (comma separated)</label>
+            <input id="settingsIgnored" type="text" placeholder="ok,good,fine,yes,no" style="width:100%; padding:10px 12px; background:var(--bg-primary); border:1px solid var(--border); border-radius:8px; color:var(--fg); font-size:13px; margin-bottom:10px;">
+            <label style="font-size:12px; color:var(--fg-dim);">Language Whitelist (comma separated, 'all' for any)</label>
+            <input id="settingsLang" type="text" placeholder="en" style="width:100%; padding:10px 12px; background:var(--bg-primary); border:1px solid var(--border); border-radius:8px; color:var(--fg); font-size:13px; margin-bottom:16px;">
+          </div>
           <button class="btn btn-accent" style="width:max-content;" onclick="saveSettings()"><i class="fa-solid fa-floppy-disk"></i> Save Settings</button>
         </div>
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <div><strong style="font-size:14px;">Auto-Sync Database</strong><div style="font-size:12px; color:var(--fg-muted);">Run pipeline hourly</div></div>
-          <button class="btn btn-accent" onclick="showToast('Sync enabled', 'success')">Enabled</button>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+          <div><strong style="font-size:14px;">Clear System Logs</strong><div style="font-size:12px; color:var(--fg-muted);">Clear all activity and system logs</div></div>
+          <button class="btn btn-outline" style="border-color: var(--danger); color: var(--danger);" onclick="clearActivities()">Clear Logs</button>
         </div>
         <div style="display:flex; justify-content:space-between; align-items:center;">
           <div><strong style="font-size:14px;">Dark Mode</strong><div style="font-size:12px; color:var(--fg-muted);">Toggle dark/light theme</div></div>
@@ -748,6 +811,7 @@
     </div>
   </section>
 
+  <!-- ACTIVITY LOGS PAGE -->
   <section class="content page-content" id="page-logs">
     <div class="card" style="min-height:70vh;">
       <div class="card-header">
@@ -758,11 +822,12 @@
         </div>
       </div>
       <div class="card-body">
-        <div id="activityLogsList" style="display:flex; flex-direction:column; gap:12px;">
-        </div>
+        <div id="activityLogsList" style="display:flex; flex-direction:column; gap:12px;"></div>
       </div>
     </div>
   </section>
+
+  <!-- SUGGESTIONS PAGE -->
   <section class="content page-content" id="page-suggestions">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
       <h2>User Suggestions</h2>
@@ -775,14 +840,18 @@
       </div>
     </div>
   </section>
+
+  <!-- Bottom spacing for accessibility -->
+  <div style="height:140px;"></div>
 </main>
 
 <script>
 
 // ── State ────────────────────────────────────────────────────────────────────
 let currentFilter = { category: 'all', status: 'pending' };
-let currentFileId = null;   // tracks the currently selected file
-let currentFiles = [];      // cached list of uploaded files
+let currentFileId = null;
+let currentFiles = [];
+let recentExports = [];
 
 function getFilterParams() {
   const status = currentFilter.status === 'all' ? '' : currentFilter.status;
@@ -874,7 +943,6 @@ async function uploadCSV() {
     if (response && response.status === 'success') {
       showToast(`File "${response.filename}" uploaded! Select it below and click Analyze.`, 'success');
       await populateFileDropdown();
-      // Auto-select the newly uploaded file
       const sel = document.getElementById('globalFileFilter');
       sel.value = response.file_id;
       currentFileId = response.file_id;
@@ -960,7 +1028,9 @@ function renderSuggestionsPage(suggs) {
           ${d.status === 'pending' ? 'Mark Solved' : 'Mark Pending'}
         </button>
       </div>
-      <div style="font-size:12px; color:var(--fg-muted); margin-top:8px;">Frequency: ${d.frequency || 1}${d.feedback_indices&&d.feedback_indices.length?' · Raw Inputs: '+d.feedback_indices.map(id=>'#'+id).join(', '):''}</div>
+      ${d.confidence !== undefined ? `<div style="font-size:11px; color:var(--fg-dim); margin-top:4px;">AI Confidence: <strong style="color:var(--accent)">${Math.round((d.confidence||0) <= 1 ? (d.confidence||0)*100 : (d.confidence||0))}%</strong></div>` : ''}
+      <div style="font-size:12px; color:var(--fg-muted); margin-top:8px;">Frequency: ${d.frequency || 1}${d.feedback_indices&&d.feedback_indices.length?' · Raw Inputs: '+d.feedback_indices.map(id=>'<span title="Feedback ID '+id+'"><strong>#'+id+'</strong></span>').join(', '):''}</div>
+      ${d.why_it_matters ? `<div style="font-size:11.5px; color:var(--fg-dim); margin-top:8px; border-top:1px solid var(--border); padding-top:8px;"><i class="fa-solid fa-info-circle" style="color:var(--info);margin-right:4px;"></i>${d.why_it_matters}</div>` : ''}
     </div>
   `).join('');
 }
@@ -969,12 +1039,13 @@ function renderSuggestionsPage(suggs) {
 function renderKPI(data) {
   const grid = document.getElementById('kpiGrid');
   if (!data || !grid) return;
+  const suggsCount = data.suggestions_collected !== undefined ? data.suggestions_collected : (window.currentSuggestionsData ? window.currentSuggestionsData.length : 0);
   const cards = [
     { icon: 'fa-solid fa-message', iconBg: 'var(--accent-dim)', iconColor: 'var(--accent)', label: 'Total Feedback Items', value: (data.total_feedback||0).toLocaleString() },
     { icon: 'fa-solid fa-circle-nodes', iconBg: 'var(--info-dim)', iconColor: 'var(--info)', label: 'Identified Clusters', value: data.clusters||0 },
     { icon: 'fa-solid fa-triangle-exclamation', iconBg: 'var(--danger-dim)', iconColor: 'var(--danger)', label: 'High Priority Issues', value: data.high_priority||0 },
     { icon: 'fa-solid fa-bolt', iconBg: 'var(--warning-dim)', iconColor: 'var(--warning)', label: 'Immediate Actions', value: data.immediate_actions||0 },
-    { icon: 'fa-solid fa-inbox', iconBg: 'var(--purple-dim)', iconColor: 'var(--purple)', label: 'Feedbacks Collected', value: (data.feedbacks_collected||data.total_feedback||0).toLocaleString() }
+    { icon: 'fa-solid fa-inbox', iconBg: 'var(--purple-dim)', iconColor: 'var(--purple)', label: 'Suggestions Collected', value: suggsCount.toLocaleString() }
   ];
   grid.innerHTML = cards.map((c, i) => `
     <div class="kpi-card" style="animation:fadeUp 0.4s ease ${i * 0.07}s both;">
@@ -983,12 +1054,6 @@ function renderKPI(data) {
       <div class="kpi-value">${c.value}</div>
     </div>
   `).join('');
-  if (!document.getElementById('fadeUpStyle')) {
-    const s = document.createElement('style');
-    s.id = 'fadeUpStyle';
-    s.textContent = `@keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }`;
-    document.head.appendChild(s);
-  }
 }
 
 // ── Matrix render ─────────────────────────────────────────────────────────────
@@ -997,12 +1062,25 @@ function renderMatrix(data) {
   if (!plot) return;
   const severityColors = { critical: 'var(--danger)', high: 'var(--warning)', medium: 'var(--info)', low: 'var(--fg-dim)' };
   const severityGlow   = { critical: 'rgba(239,68,68,0.4)', high: 'rgba(245,158,11,0.35)', medium: 'rgba(56,189,248,0.3)', low: 'rgba(90,106,128,0.2)' };
+  if (!data || data.length === 0) {
+    plot.innerHTML = '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:var(--fg-dim);font-size:12px;text-align:center;">No data yet. Analyze a file first.</div>';
+    return;
+  }
   plot.innerHTML = (data||[]).map((d, i) => {
     const xPos = Math.max(5, Math.min(95, d.x * 100));
     const yPos = Math.max(5, Math.min(95, (1 - d.y) * 100));
+    const confidence = d.confidence !== undefined ? `<br><span style="color:var(--fg-dim);">AI Confidence: <strong>${Math.round((d.confidence||0) <= 1 ? (d.confidence||0)*100 : (d.confidence||0))}%</strong></span>` : '';
+    const whyMatters = d.why_it_matters ? `<br><span style="color:var(--fg-dim);font-style:italic;">${d.why_it_matters}</span>` : '';
+    const reasoning = d.reasoning ? `<br><span style="color:var(--fg-muted);">${d.reasoning.substring(0,100)}${d.reasoning.length>100?'…':''}</span>` : '';
     return `
-    <div class="matrix-dot" style="left:${xPos}%;top:${yPos}%;background:${severityColors[d.severity]};box-shadow:0 0 12px ${severityGlow[d.severity]};animation:fadeUp 0.5s ease ${0.3 + i * 0.05}s both;">
-      <div class="dot-tooltip"><strong>${d.name}</strong><br>Score: ${d.score} · ${d.severity.charAt(0).toUpperCase() + d.severity.slice(1)}</div>
+    <div class="matrix-dot" style="left:${xPos}%;top:${yPos}%;background:${severityColors[d.severity]||'var(--info)'};box-shadow:0 0 12px ${severityGlow[d.severity]||'rgba(56,189,248,0.3)'};animation:fadeUp 0.5s ease ${0.3 + i * 0.05}s both;">
+      <div class="dot-tooltip">
+        <strong>${d.name}</strong>
+        <br>Score: ${d.score} · ${(d.severity||'').charAt(0).toUpperCase()+(d.severity||'').slice(1)}
+        ${confidence}
+        ${reasoning}
+        ${whyMatters}
+      </div>
     </div>`;
   }).join('');
 }
@@ -1011,7 +1089,9 @@ function renderMatrix(data) {
 function renderIssues(data) {
   window.currentIssuesData = data||[];
   const list = document.getElementById('issuesList');
+  const badge = document.getElementById('issuesBadge');
   if (!list) return;
+  if (badge) badge.textContent = (data ? data.length : 0) + ' Issues';
   if (!data || data.length === 0) {
     list.innerHTML = '<div style="color:var(--fg-muted);padding:20px;text-align:center;">No issues found. Upload and analyze a CSV file to get started.</div>';
     return;
@@ -1020,12 +1100,19 @@ function renderIssues(data) {
   const rankBgs    = ['var(--danger-dim)', 'var(--warning-dim)', 'var(--warning-dim)', 'var(--info-dim)', 'var(--info-dim)'];
   list.innerHTML = data.map((d, i) => {
     const barColor = d.score >= 75 ? 'var(--danger)' : d.score >= 50 ? 'var(--warning)' : 'var(--info)';
+    const confTxt = d.confidence !== undefined ? ` · Confidence: ${Math.round((d.confidence||0) <= 1 ? (d.confidence||0)*100 : (d.confidence||0))}%` : '';
+    const tooltipContent = [
+      d.why_it_matters ? `<strong>Why it matters:</strong> ${d.why_it_matters}` : '',
+      d.reasoning ? `<strong>Reasoning:</strong> ${d.reasoning}` : '',
+      d.confidence !== undefined ? `<strong>AI Confidence:</strong> ${Math.round((d.confidence||0) <= 1 ? (d.confidence||0)*100 : (d.confidence||0))}%` : ''
+    ].filter(Boolean).join('<br>');
     return `
     <div class="issue-item" style="cursor:pointer;animation:fadeUp 0.4s ease ${0.4+i*0.06}s both;" onclick="openRawFeedbackModal(${i})" title="Click to view raw feedback">
+      ${tooltipContent ? `<div class="why-tooltip">${tooltipContent}</div>` : ''}
       <div class="issue-rank" style="background:${rankBgs[i]||'rgba(255,255,255,0.05)'};color:${rankColors[i]||'var(--fg-muted)'};">${d.rank}</div>
       <div class="issue-info">
         <div class="issue-name">${d.name}</div>
-        <div class="issue-meta">${d.category} · ${d.mentions} mentions${d.source_ids&&d.source_ids.length?' · Source IDs: '+d.source_ids.map(id=>'#'+id).join(', '):''}</div>
+        <div class="issue-meta">${d.category} · ${d.mentions} mentions${confTxt}${d.source_ids&&d.source_ids.length?' · IDs: '+d.source_ids.map(id=>'#'+id).join(', '):''}</div>
       </div>
       <div class="issue-bar-bg"><div class="issue-bar-fill" style="width:${d.score}%;background:${barColor};"></div></div>
       <div class="issue-score" style="color:${barColor};">${d.score}</div>
@@ -1088,7 +1175,9 @@ function renderTrend(data) {
 // ── Recommendations ───────────────────────────────────────────────────────────
 function renderRecommendations(data) {
   const container = document.getElementById('aiSuggestions');
+  const badge = document.getElementById('suggBadge');
   if (!container) return;
+  if (badge) badge.textContent = (data ? data.length : 0) + ' Suggestions';
   const priorityStyles = {
     critical: { icon: 'fa-solid fa-fire',            color: 'var(--danger)', bg: 'var(--danger-dim)' },
     high:     { icon: 'fa-solid fa-arrow-trend-up',  color: 'var(--warning)',bg: 'var(--warning-dim)' },
@@ -1105,43 +1194,86 @@ function renderRecommendations(data) {
       <div class="ai-suggestion-header">
         <div class="ai-icon" style="background:${s.bg};color:${s.color};"><i class="${s.icon}"></i></div>
         <span>${r.title}</span>
+        ${r.confidence !== undefined ? `<span style="margin-left:auto;font-size:10.5px;color:var(--fg-dim);">AI: ${Math.round((r.confidence||0) <= 1 ? (r.confidence||0)*100 : (r.confidence||0))}%</span>` : ''}
       </div>
       <p>${r.text}</p>
+      ${r.why_it_matters ? `<div style="font-size:11px;color:var(--fg-dim);margin-top:6px;border-top:1px solid var(--border);padding-top:6px;"><i class="fa-solid fa-info-circle" style="color:var(--info);margin-right:4px;"></i>${r.why_it_matters}</div>` : ''}
       ${r.source_ids&&r.source_ids.length?`<div style="font-size:10.5px;color:var(--fg-dim);margin-top:8px;">Source Submissions: ${r.source_ids.map(id=>'#'+id).join(', ')}</div>`:''}
     </div>`;
   }).join('');
 }
 
 // ── Full pages render ─────────────────────────────────────────────────────────
-function renderFullPages(issues, clusters, actions) {
-  const fbList = document.getElementById('fullFeedbackList');
-  if (fbList) {
-    let allFeedbacks = [];
-    (issues||[]).forEach(i => { if(i.original_texts) i.original_texts.forEach(t => allFeedbacks.push({text: t, issue: i.name, score: i.score})); });
-    fbList.innerHTML = allFeedbacks.length ? allFeedbacks.map(f => `
-      <div style="background:var(--bg-primary); padding:16px; border-radius:8px; border:1px solid var(--border);">
-        <div style="font-size:13px; line-height:1.5; margin-bottom:8px;">"${f.text}"</div>
-        <div style="font-size:11px; color:var(--fg-muted);">Tagged under: <span style="color:var(--accent);">${f.issue}</span> (Priority: ${f.score})</div>
-      </div>`).join('') : '<div style="color:var(--fg-muted);padding:20px;text-align:center;">No feedback data. Analyze a CSV to populate this view.</div>';
-  }
+let allFeedbacksCache = [];
 
+function filterFeedback() {
+  const textQ = (document.getElementById('feedbackSearchText')?.value || '').toLowerCase();
+  const idQ = (document.getElementById('feedbackSearchId')?.value || '').trim();
+  const fbList = document.getElementById('fullFeedbackList');
+  if (!fbList) return;
+
+  let filtered = allFeedbacksCache;
+  if (textQ) filtered = filtered.filter(f => f.text.toLowerCase().includes(textQ));
+  if (idQ) filtered = filtered.filter(f => String(f.id) === idQ || String(f.id).includes(idQ));
+
+  fbList.innerHTML = filtered.length ? filtered.map(f => `
+    <div style="background:var(--bg-primary); padding:16px; border-radius:8px; border:1px solid var(--border);">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+        <span style="font-size:10.5px;font-weight:700;color:var(--accent);background:var(--accent-dim);padding:2px 8px;border-radius:8px;">#${f.id}</span>
+        <span style="font-size:11px;color:var(--fg-dim);">Tagged: <span style="color:var(--accent);">${f.issue}</span> · Priority: ${f.score}</span>
+      </div>
+      <div style="font-size:13px; line-height:1.5;">"${f.text}"</div>
+    </div>`).join('')
+    : '<div style="color:var(--fg-muted);padding:20px;text-align:center;">No matching feedback found.</div>';
+}
+
+function renderFullPages(issues, clusters, actions) {
+  // Feedback Overview
+  allFeedbacksCache = [];
+  (issues||[]).forEach(issue => {
+    if (issue.original_texts) {
+      issue.original_texts.forEach((t, idx) => {
+        const rawId = (issue.source_ids && issue.source_ids[idx] !== undefined) ? issue.source_ids[idx] : idx;
+        allFeedbacksCache.push({ text: t, issue: issue.name, score: issue.score, id: rawId });
+      });
+    }
+  });
+  filterFeedback();
+
+  // Clusters
   const cGrid = document.getElementById('fullClustersGrid');
   if (cGrid && clusters) {
     cGrid.innerHTML = clusters.length ? clusters.map(c => {
       const score = c.priority_score || 0;
       const color = score >= 75 ? 'var(--danger)' : score >= 50 ? 'var(--warning)' : 'var(--info)';
+      const confTxt = c.confidence !== undefined ? `<span style="color:var(--accent);">${Math.round((c.confidence||0) <= 1 ? (c.confidence||0)*100 : (c.confidence||0))}%</span>` : 'N/A';
+      // Build mention tags with tooltip showing feedback IDs
+      const mentionTags = c.feedback_indices && c.feedback_indices.length
+        ? c.feedback_indices.map(id => `
+          <span class="cluster-mention-tag">
+            #${id}
+            <span class="mention-tip">Feedback ID: ${id}</span>
+          </span>`).join('')
+        : `<span style="color:var(--fg-dim);">${c.frequency||1} mentions</span>`;
       return `
       <div style="background:var(--bg-primary); padding:16px; border-radius:12px; border:1px solid var(--border); display:flex; flex-direction:column; gap:10px;">
-        <h4 style="font-size:15px; font-weight:600; color:${color}; margin:0;">${c.topic || 'Unknown'}</h4>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <h4 style="font-size:15px; font-weight:600; color:${color}; margin:0;">${c.topic || 'Unknown'}</h4>
+          <span style="font-size:10.5px;padding:2px 8px;border-radius:8px;background:var(--bg-card);color:var(--fg-dim);">AI: ${confTxt}</span>
+        </div>
         <div style="font-size:12px; color:var(--fg-muted); line-height:1.5;">${c.reasoning || 'No specific reasoning provided.'}</div>
+        ${c.why_it_matters ? `<div style="font-size:11.5px;color:var(--fg-dim);border-top:1px solid var(--border);padding-top:8px;"><i class="fa-solid fa-info-circle" style="color:var(--info);margin-right:4px;"></i>${c.why_it_matters}</div>` : ''}
+        <div style="font-size:11px; color:var(--fg-dim);">Mentions:</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;">${mentionTags}</div>
         <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--fg-dim); margin-top:auto; padding-top:10px; border-top:1px solid var(--border);">
           <span>Score: <strong style="color:${color}">${score}</strong></span>
-          <span>Mentions: <strong>${c.frequency || 1}</strong></span>
+          <span>Frequency: <strong>${c.frequency || 1}</strong></span>
         </div>
       </div>`;
     }).join('') : '<div style="color:var(--fg-muted);padding:20px;grid-column:1/-1;text-align:center;">No clusters found for this selection.</div>';
   }
 
+  // Action Items
   const aList = document.getElementById('fullActionsList');
   if (aList && actions) {
     const badge = document.getElementById('actionItemsBadge');
@@ -1165,8 +1297,9 @@ function renderFullPages(issues, clusters, actions) {
 // ── Raw feedback modal ────────────────────────────────────────────────────────
 window.currentIssuesData = [];
 window.currentSuggestionsData = [];
-function openRawFeedbackModal(index, source = 'issues') {
-  const issue = source === 'suggestions' ? window.currentSuggestionsData[index] : window.currentIssuesData[index];
+function openRawFeedbackModal(index, source) {
+  const srcArr = source === 'suggestions' ? window.currentSuggestionsData : window.currentIssuesData;
+  const issue = srcArr[index];
   if (!issue) return;
   const title = issue.name || issue.topic || 'Feedback Source';
   const sourceIds = issue.source_ids || issue.feedback_indices || [];
@@ -1191,13 +1324,14 @@ function openRawFeedbackModal(index, source = 'issues') {
 function closeRawFeedbackModal() { document.getElementById('rawFeedbackModal').classList.remove('active'); }
 
 // ── Toast ─────────────────────────────────────────────────────────────────────
-function showToast(message, type = 'info') {
+function showToast(message, type) {
+  type = type || 'info';
   const container = document.getElementById('toastContainer');
   const toast = document.createElement('div');
   toast.className = `toast ${type}`;
   const icons  = { success: 'fa-circle-check', error: 'fa-circle-xmark', info: 'fa-circle-info' };
   const colors = { success: 'var(--accent)',   error: 'var(--danger)',    info: 'var(--info)' };
-  toast.innerHTML = `<i class="fa-solid ${icons[type]}" style="color:${colors[type]};font-size:16px;flex-shrink:0;"></i><span>${message}</span>`;
+  toast.innerHTML = `<i class="fa-solid ${icons[type]||'fa-circle-info'}" style="color:${colors[type]||'var(--info)'};font-size:16px;flex-shrink:0;"></i><span>${message}</span>`;
   container.appendChild(toast);
   setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateX(100%)'; toast.style.transition = 'all 0.3s'; }, 3500);
   setTimeout(() => toast.remove(), 4000);
@@ -1218,13 +1352,68 @@ async function applyFilter() {
   await loadDashboard();
 }
 
-// ── Export ────────────────────────────────────────────────────────────────────
+// ── Reports ───────────────────────────────────────────────────────────────────
+function addToRecentExports(name, type) {
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  recentExports.unshift({ name, type, time: timeStr });
+  const list = document.getElementById('recentExportsList');
+  if (!list) return;
+  list.innerHTML = recentExports.map(e => `
+    <div class="export-item">
+      <i class="fa-solid ${e.type === 'pdf' ? 'fa-file-pdf' : 'fa-file-csv'}"></i>
+      <span class="exp-name">${e.name}</span>
+      <span class="exp-time">${e.time}</span>
+    </div>`).join('');
+}
+
 async function exportReport() {
   showToast('Exporting report…', 'info');
   try {
     const r = await triggerExport();
-    showToast(r && r.status === 'success' ? 'Report exported successfully.' : 'Export cancelled or failed.', r && r.status === 'success' ? 'success' : 'info');
+    if (r && r.status === 'success') {
+      showToast('Report exported successfully.', 'success');
+      addToRecentExports(r.filename || 'dashboard_export', 'pdf');
+    } else {
+      showToast('Export cancelled or failed.', 'info');
+    }
   } catch { showToast('Export failed.', 'error'); }
+}
+
+async function exportPDFReport() {
+  showToast('Generating PDF report…', 'info');
+  try {
+    let r;
+    if (window.pywebview.api.export_pdf) {
+      r = await window.pywebview.api.export_pdf(getFilterParams());
+    } else {
+      r = await triggerExport();
+    }
+    if (r && r.status === 'success') {
+      showToast('PDF report generated successfully!', 'success');
+      addToRecentExports(r.filename || 'report.pdf', 'pdf');
+    } else {
+      showToast(r && r.message ? r.message : 'PDF generation failed.', 'error');
+    }
+  } catch(e) { showToast('PDF export error: ' + e, 'error'); }
+}
+
+async function exportCSVReport() {
+  showToast('Generating CSV export…', 'info');
+  try {
+    let r;
+    if (window.pywebview.api.export_csv) {
+      r = await window.pywebview.api.export_csv(getFilterParams());
+    } else {
+      r = await triggerExport();
+    }
+    if (r && r.status === 'success') {
+      showToast('CSV exported successfully!', 'success');
+      addToRecentExports(r.filename || 'data_export.csv', 'csv');
+    } else {
+      showToast(r && r.message ? r.message : 'CSV export failed.', 'error');
+    }
+  } catch(e) { showToast('CSV export error: ' + e, 'error'); }
 }
 
 // ── Sidebar nav ───────────────────────────────────────────────────────────────
@@ -1262,21 +1451,33 @@ async function loadSettings() {
     const usernameInput = document.getElementById('settingsUsername');
     if (apiKeyInput) apiKeyInput.value = settings.api_key || '';
     if (usernameInput) usernameInput.value = settings.username || '';
-  } catch (e) { console.error(e); }
+    const el = (id, val) => { const e = document.getElementById(id); if(e) e.value = val; };
+    el('settingsDupThresh', settings.duplicate_threshold || '90.0');
+    el('settingsMinLen', settings.min_feedback_length || '3');
+    el('settingsBatchSize', settings.batch_size || '50');
+    el('settingsIgnored', settings.ignored_phrases || 'ok,good,fine,nice,yes,no,n/a,-,none');
+    el('settingsLang', settings.language_whitelist || 'en');
+  } catch (e) { console.error('Settings load error:', e); }
 }
 
 async function saveSettings() {
+  const val = id => { const e = document.getElementById(id); return e ? e.value : ''; };
   const settings = {
-    api_key: document.getElementById('settingsApiKey').value,
-    username: document.getElementById('settingsUsername').value,
-    password: document.getElementById('settingsPassword').value
+    api_key: val('settingsApiKey'),
+    username: val('settingsUsername'),
+    password: val('settingsPassword'),
+    duplicate_threshold: val('settingsDupThresh'),
+    min_feedback_length: val('settingsMinLen'),
+    batch_size: val('settingsBatchSize'),
+    ignored_phrases: val('settingsIgnored'),
+    language_whitelist: val('settingsLang')
   };
   const result = await window.pywebview.api.save_settings(settings);
   if (result && result.status === 'success') {
     document.getElementById('settingsPassword').value = '';
     showToast('Settings saved.', 'success');
   } else {
-    showToast(result.message || 'Settings could not be saved.', 'error');
+    showToast((result && result.message) || 'Settings could not be saved.', 'error');
   }
 }
 
@@ -1286,12 +1487,16 @@ async function loadActivities() {
     const activities = await fetchActivities();
     const list = document.getElementById('activityLogsList');
     if (!list) return;
+    if (!activities || activities.length === 0) {
+      list.innerHTML = '<div style="color:var(--fg-muted);text-align:center;padding:20px;">No activity logs yet.</div>';
+      return;
+    }
     list.innerHTML = activities.map(a => `
-      <div style="padding:12px; border-left:2px solid var(--accent); background:var(--bg-primary);">
+      <div style="padding:12px; border-left:2px solid var(--accent); background:var(--bg-primary); border-radius:4px;">
         <strong>System Log</strong>: ${a.message}
         <span style="color:var(--fg-muted); font-size:11px; float:right;">${a.time}</span>
       </div>`).join('');
-  } catch (e) { console.error(e); }
+  } catch (e) { console.error('Activities error:', e); }
 }
 
 async function clearActivities() {
@@ -1300,7 +1505,7 @@ async function clearActivities() {
     showToast('Previous logs cleared.', 'success');
     await loadActivities();
   } else {
-    showToast(result.message || 'Could not clear logs.', 'error');
+    showToast((result && result.message) || 'Could not clear logs.', 'error');
   }
 }
 
@@ -1326,6 +1531,7 @@ async function loadDashboard() {
     await loadActivities();
   } catch (err) {
     console.error('Dashboard load error:', err);
+    showToast('Error loading dashboard data. Check console for details.', 'error');
   }
 }
 

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Opinova — Privacy Policy</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="icon" type="image/png" href="../logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #0a0e17;
+    --bg-card: #151c2c;
+    --border: #1e293b;
+    --fg: #e2e8f0;
+    --fg-muted: #94a3b8;
+    --accent: #3b82f6;
+  }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background-color: var(--bg-primary);
+    color: var(--fg);
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+  }
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 40px;
+    max-width: 800px;
+    width: 100%;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  }
+  h1 { font-family: 'Space Grotesk', sans-serif; font-size: 28px; margin-bottom: 24px; color: #fff; }
+  h2 { font-family: 'Space Grotesk', sans-serif; font-size: 20px; margin-top: 24px; margin-bottom: 12px; color: #fff; }
+  p, li { color: var(--fg-muted); line-height: 1.6; margin-bottom: 16px; }
+  ul { list-style-type: disc; padding-left: 20px; }
+  .btn-accent {
+    background: var(--accent);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    display: inline-block;
+    margin-top: 24px;
+    font-weight: 500;
+    transition: opacity 0.2s;
+  }
+  .btn-accent:hover { opacity: 0.9; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1>Privacy Policy</h1>
+  <p>Last updated: August 2026</p>
+
+  <h2>1. Data Collection and Storage</h2>
+  <p>Opinova is designed as a local-first application. All data, including feedback files (CSV), generated clusters, logs, and database records (SQLite), are stored strictly locally on your machine. We do not transmit your data to any external or cloud servers.</p>
+
+  <h2>2. AI Processing</h2>
+  <p>Opinova utilizes a local or securely configured Language Model (LLM) processing pipeline. If configured to use local models, no data leaves your machine. If configured to use external API providers (e.g., OpenAI, Google), the data processing will be subject to the respective provider's privacy agreements.</p>
+
+  <h2>3. Activity Logs</h2>
+  <p>We maintain local activity logs to help you monitor system actions such as file uploads, report generation, and database synchronizations. These logs are stored in your local directory and can be cleared at any time from the Settings menu.</p>
+
+  <h2>4. Contact Us</h2>
+  <p>If you have any questions about this Privacy Policy, please refer to the project documentation or contact the administrator of your Opinova deployment.</p>
+
+  <a href="#" onclick="window.history.back(); return false;" class="btn-accent">Go Back</a>
+</div>
+
+</body>
+</html>
