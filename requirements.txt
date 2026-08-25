@@ -4,3 +4,9 @@ google-genai
 python-dotenv
 pydantic
 streamlit
+scikit-learn
+nltk
+rapidfuzz
+langdetect
+spacy
+reportlab
